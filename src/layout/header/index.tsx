@@ -17,7 +17,7 @@ import AddBusinessSharpIcon from '@mui/icons-material/AddBusinessSharp';
 import FlagCircleSharpIcon from '@mui/icons-material/FlagCircleSharp';
 import PeopleOutlineSharpIcon from '@mui/icons-material/PeopleOutlineSharp';
 import FreeIcon from "../../assets/icons/HomeCareLogo.png";
-import { HOME_PATH, REPORT_PATH, SHOW_SERVICE_PATH, SERVICE_STATUS_PATH } from "../../routes/path";
+import { HOME_PATH, REPORT_PATH, SHOW_SERVICE_PATH, SERVICE_STATUS_PATH, CAR_PATH } from "../../routes/path";
 import { Link, useLocation } from "react-router-dom";
 
 const drawerWidth = 240;
@@ -28,7 +28,8 @@ function ResponsiveAppBar() {
   // Navigation items
   const navItems = [
     { to: SHOW_SERVICE_PATH, label: "ຈັດການຂໍ້ມູນຜູ້ໃຫ້ບໍລິການ", icon: <PeopleOutlineSharpIcon /> },
-    { to: HOME_PATH, label: "ເພີ່ມຂໍ້ມູນ", icon: <AddBusinessSharpIcon /> },
+    { to: HOME_PATH, label: "ເພີ່ມຂໍ້ມູນຜູ້ໃຫ້ບໍລິການ", icon: <AddBusinessSharpIcon /> },
+    { to: CAR_PATH, label: "ເພີ່ມຂໍ້ມູນລົດຂອງຜູ້ໃຫ້ບໍລິການ", icon: <AddBusinessSharpIcon /> },
     { to: SERVICE_STATUS_PATH, label: "ສະຖານະການບໍລິການ", icon: <BookIcon /> },
     { to: REPORT_PATH, label: "ການລາຍງານ", icon: <FlagCircleSharpIcon /> },
 

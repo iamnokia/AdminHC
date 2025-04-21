@@ -1,5 +1,6 @@
 import MainLayout from "../layout";
 import NotFoundPage from "../pages/404";
+import CarForm from "../pages/add_car/components/car";
 import HomePage from "../pages/home";
 import AdminLogin from "../pages/login/components/login";
 import AdminRegister from "../pages/register/components/register";
@@ -8,12 +9,10 @@ import ServiceProviderAdmin from "../pages/show_service/components/service";
 import ServiceStatusAdmin from "../pages/status/components/ServiceStatus";
 import {
 
+  CAR_PATH,
   HOME_PATH,
-
   LOGIN_PATH,
-
   REGISTER_PATH,
-
   REPORT_PATH,
   SERVICE_STATUS_PATH,
   SHOW_SERVICE_PATH,
@@ -27,6 +26,7 @@ const RoutesComponent = () => {
       element: <MainLayout />,
       children: [
         { path: HOME_PATH, element: <HomePage /> },
+        { path: CAR_PATH, element: <CarForm/> },
         { path: REPORT_PATH, element:  <ReportsIndex/> },
         { path: SHOW_SERVICE_PATH, element:  <ServiceProviderAdmin/> },
         { path: SERVICE_STATUS_PATH, element:  <ServiceStatusAdmin/> },

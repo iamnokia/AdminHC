@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import {
   Box,
   Typography,
@@ -44,64 +44,11 @@ import {
   Edit as EditIcon,
   Delete as DeleteIcon,
   Save as SaveIcon
+  
 } from '@mui/icons-material';
-import axios from 'axios';
+import useMainController from '../controllers/index';
+import { useEffect, useState } from "react";
 
-// Define interface for API responses
-interface EmployeeModel {
-  id: number;
-  first_name: string;
-  last_name: string;
-  email: string;
-  tel: string;
-  address: string;
-  gender: string;
-  cv: string;
-  avatar: string;
-  cat_id: number;
-  cat_name: string;
-  price: string;
-  status: 'active' | 'inactive';
-  city: string;
-  created_at: string;
-  updated_at: string;
-}
-
-interface CarModel {
-  id: number | string;
-  emp_id: number | string;
-  car_brand: string;
-  model: string;
-  license_plate: string;
-  car_image: string;
-  created_at: string;
-  updated_at: string;
-}
-
-// Service Provider interface
-interface ServiceProvider extends Omit<EmployeeModel, 'price'> {
-  price: number;
-  categoryType: string;
-  car?: CarModel;
-}
-
-// Category interface
-interface ServiceCategory {
-  id: string;
-  title: string;
-  icon: React.ReactNode;
-  categoryType: string;
-}
-
-// Props for ServiceProviderDetail component
-interface ServiceProviderDetailProps {
-  open: boolean;
-  provider: ServiceProvider | null;
-  onClose: () => void;
-  onStatusChange: (id: number, newStatus: 'active' | 'inactive') => void;
-  onSave: (provider: ServiceProvider) => void;
-  onDelete: (id: number) => void;
-}
 
 // Format price with currency
 const formatPrice = (price: string | number): string => {
@@ -140,17 +87,6 @@ const ServiceProviderDetail: React.FC<ServiceProviderDetailProps> = ({
   const [editedProvider, setEditedProvider] = useState<ServiceProvider | null>(null);
   const [editedCar, setEditedCar] = useState<CarModel | null>(null);
 
-  // Cities for dropdown
-  const cities = [
-    'Vientiane',
-    'Luang Prabang',
-    'Savannakhet',
-    'Pakse',
-    'Thakhek',
-    'Phonsavan',
-    'Xam Neua',
-    'Xayaboury'
-  ];
 
   useEffect(() => {
     if (provider) {
@@ -192,7 +128,7 @@ const ServiceProviderDetail: React.FC<ServiceProviderDetailProps> = ({
       if (isMovingService && editedCar) {
         updatedProvider.car = editedCar;
       }
-      onSave(updatedProvider);
+      onSave(updatedProvider);-
       setIsEditing(false);
     }
   };
@@ -791,7 +727,7 @@ const ServiceProviderCard: React.FC<{
         </Box>
         
         {/* Moving service badge */}
-        {isMovingService && (
+        {isMovingService && provider.car && (
           <Box
             sx={{
               position: 'absolute',
@@ -907,13 +843,13 @@ const ServiceProviderAdmin: React.FC = () => {
   const [activeTab, setActiveTab] = useState<string>('all');
   const [selectedProvider, setSelectedProvider] = useState<ServiceProvider | null>(null);
   const [dialogOpen, setDialogOpen] = useState<boolean>(false);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [serviceProviders, setServiceProviders] = useState<ServiceProvider[]>([]);
   const [snackbar, setSnackbar] = useState<{open: boolean, message: string, severity: 'success' | 'error'}>({
     open: false,
     message: '',
     severity: 'success'
   });
+  
+  const { loading, error, serviceProviders, handleNavigate } = useMainController();
   
   // Define service categories
   const serviceCategories: ServiceCategory[] = [
@@ -967,175 +903,6 @@ const ServiceProviderAdmin: React.FC = () => {
     },
   ];
 
-  // Map the category name to category id
-  const getCategoryType = (catName: string | undefined): string => {
-    const normalizedName = (catName || '').toLowerCase();
-    
-    if (normalizedName.includes('cleaning') || normalizedName.includes('ທຳຄວາມສະອາດ')) return 'cleaning';
-    if (normalizedName.includes('electrical') || normalizedName.includes('ໄຟຟ້າ')) return 'electrical';
-    if (normalizedName.includes('aircon') || normalizedName.includes('air') || normalizedName.includes('ແອ')) return 'aircon';
-    if (normalizedName.includes('plumbing') || normalizedName.includes('ປະປາ')) return 'plumbing';
-    if (normalizedName.includes('moving') || normalizedName.includes('ຂົນສົ່ງ')) return 'moving';
-    if (normalizedName.includes('bathroom') || normalizedName.includes('ຫ້ອງນ້ຳ')) return 'bathroom';
-    if (normalizedName.includes('pest') || normalizedName.includes('ກຳຈັດແມງໄມ້')) return 'pest';
-    return 'other';
-  };
-
-  // Mock data for demonstration
-  const mockServiceProviders: ServiceProvider[] = [
-    {
-      id: 1,
-      first_name: "ສົມພອນ",
-      last_name: "ວິໄລພົນ",
-      email: "somphon@gmail.com",
-      tel: "2098765432",
-      address: "123 ບ້ານ ທ່າພະລານໄຊ, ວຽງຈັນ",
-      gender: "male",
-      cv: "ຂ້ອຍເປັນຊ່າງໄຟຟ້າມືອາຊີບທີ່ມີປະສົບການຫຼາຍກວ່າ 5 ປີ ໃນການບໍລິການສ້ອມແປງໄຟຟ້າໃນຫຼາຍປະເພດ ລວມທັງໄຟຟ້າອາຄານ, ແລະ ບ້ານເຮືອນ.",
-      avatar: "https://res.cloudinary.com/dnxv0rhri/image/upload/v1743074224/employees/profile3.jpg",
-      cat_id: 2,
-      cat_name: "Electrical",
-      price: 200000,
-      status: "active",
-      city: "SIKHOTTABONG",
-      categoryType: "electrical",
-      created_at: "2025-01-20T10:25:18.000Z",
-      updated_at: "2025-03-15T14:32:47.000Z"
-    },
-    {
-      id: 2,
-      first_name: "ນາງ ພອນສະຫວັນ",
-      last_name: "ສີສະຫວາດ",
-      email: "ponsavan@gmail.com",
-      tel: "2055667788",
-      address: "456 ບ້ານ ໂນນສະຫວ່າງ, ວຽງຈັນ",
-      gender: "female",
-      cv: "ຂ້ອຍເຮັດວຽກດ້ານການທຳຄວາມສະອາດມາຫຼາຍກວ່າ 7 ປີ, ຊ່ຽວຊານໃນການທຳຄວາມສະອາດທຸກປະເພດທັງອາຄານ ຫຼື ເຮືອນພັກ.",
-      avatar: "https://res.cloudinary.com/dnxv0rhri/image/upload/v1743074224/employees/profile1.jpg",
-      cat_id: 1,
-      cat_name: "Cleaning",
-      price: 150000,
-      status: "active",
-      city: "CHANTHABOULY",
-      categoryType: "cleaning",
-      created_at: "2025-02-05T09:30:22.000Z",
-      updated_at: "2025-03-20T11:45:33.000Z"
-    },
-    {
-      id: 3,
-      first_name: "ທ້າວ ສຸລິຍາ",
-      last_name: "ພູມີໄຊ",
-      email: "suriya@gmail.com",
-      tel: "2099887766",
-      address: "789 ບ້ານ ດົງນາໂຊກ, ວຽງຈັນ",
-      gender: "male",
-      cv: "ຂ້ອຍມີປະສົບການໃນການສ້ອມແປງແອເຢັນທຸກປະເພດມາແລ້ວຫຼາຍກວ່າ 8 ປີ, ສາມາດບຳລຸງຮັກສາ ແລະ ສ້ອມແປງແອເຢັນຫຼາຍຍີ່ຫໍ້.",
-      avatar: "https://res.cloudinary.com/dnxv0rhri/image/upload/v1743074224/employees/profile4.jpg",
-      cat_id: 3,
-      cat_name: "Aircon",
-      price: 250000,
-      status: "inactive",
-      city: "XAYSETHA",
-      categoryType: "aircon",
-      created_at: "2025-01-15T14:22:54.000Z",
-      updated_at: "2025-03-22T16:10:45.000Z"
-    },
-    {
-      id: 4,
-      first_name: "ທ້າວ ບຸນມີ",
-      last_name: "ວົງພັດທະນາ",
-      email: "bounmy@gmail.com",
-      tel: "2066778899",
-      address: "321 ບ້ານ ໂພນເຄັງ, ວຽງຈັນ",
-      gender: "male",
-      cv: "ຂ້ອຍເປັນຊ່າງປະປາທີ່ມີປະສົບການຫຼາຍກວ່າ 6 ປີ, ສາມາດແກ້ໄຂບັນຫາປະປາທຸກປະເພດທັງພາຍໃນເຮືອນ ແລະ ອາຄານຂະໜາດໃຫຍ່.",
-      avatar: "https://res.cloudinary.com/dnxv0rhri/image/upload/v1743074224/employees/profile2.jpg",
-      cat_id: 4,
-      cat_name: "Plumbing",
-      price: 180000,
-      status: "active",
-      city: "NAXAYTHONG",
-      categoryType: "plumbing",
-      created_at: "2025-02-10T11:40:33.000Z",
-      updated_at: "2025-03-18T13:25:55.000Z"
-    },
-    {
-      id: 5,
-      first_name: "ທ້າວ ສຸກສະຫວັນ",
-      last_name: "ພັນທະວົງ",
-      email: "souksavanh@gmail.com",
-      tel: "2012345678",
-      address: "567 ບ້ານ ໜອງບົວທອງ, ວຽງຈັນ",
-      gender: "male",
-      cv: "ຂ້ອຍເປັນຜູ້ໃຫ້ບໍລິການຂົນສົ່ງທີ່ມີປະສົບການເກືອບ 10 ປີ, ມີລົດກະບະຕູ້ທັນສະໄໝ ແລະ ພ້ອມໃຫ້ບໍລິການຍ້າຍເຮືອນ ຫຼື ຂົນຍ້າຍສິນຄ້າຕ່າງໆ.",
-      avatar: "https://res.cloudinary.com/dnxv0rhri/image/upload/v1743074224/employees/profile5.jpg",
-      cat_id: 5,
-      cat_name: "Moving",
-      price: 300000,
-      status: "active",
-      city: "SIKHOTTABONG",
-      categoryType: "moving",
-      created_at: "2025-01-05T08:15:20.000Z",
-      updated_at: "2025-03-10T09:50:30.000Z",
-      car: {
-        id: 1,
-        emp_id: 5,
-        car_brand: "Toyota",
-        model: "Hilux",
-        license_plate: "ກຂ 1234",
-        car_image: "https://res.cloudinary.com/dnxv0rhri/image/upload/v1743000864/cars/truck1.jpg",
-        created_at: "2025-01-05T08:20:42.000Z",
-        updated_at: "2025-03-10T09:55:21.000Z"
-      }
-    },
-    {
-      id: 6,
-      first_name: "ນາງ ສຸພາພອນ",
-      last_name: "ໄຊຍະສິດ",
-      email: "supaphon@gmail.com",
-      tel: "2098765432",
-      address: "890 ບ້ານ ໂນນຫຼວງ, ວຽງຈັນ",
-      gender: "female",
-      cv: "ຂ້ອຍເປັນຜູ້ໃຫ້ບໍລິການດູດສ້ວມ ແລະ ທຳຄວາມສະອາດຫ້ອງນ້ຳທີ່ມີປະສົບການຫຼາຍກວ່າ 4 ປີ, ໃຊ້ອຸປະກອນທີ່ທັນສະໄໝ ແລະ ນ້ຳຢາທີ່ປອດໄພ.",
-      avatar: "https://res.cloudinary.com/dnxv0rhri/image/upload/v1743074224/employees/profile6.jpg",
-      cat_id: 6,
-      cat_name: "Bathroom",
-      price: 220000,
-      status: "inactive",
-      city: "CHANTHABOULY",
-      categoryType: "bathroom",
-      created_at: "2025-02-15T15:30:10.000Z",
-      updated_at: "2025-03-05T17:40:25.000Z"
-    }
-  ];
-
-  // Fetch data from API (simulated with mock data)
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      try {
-        // In a real implementation, you would use:
-        // const response = await axios.get('/api/service-providers');
-        
-        // For demo purposes, we'll use our mock data and simulate API delay
-        setTimeout(() => {
-          setServiceProviders(mockServiceProviders);
-          setLoading(false);
-        }, 800);
-      } catch (error) {
-        console.error("Error fetching data:", error);
-        setLoading(false);
-        setSnackbar({
-          open: true,
-          message: "Failed to load service providers",
-          severity: "error"
-        });
-      }
-    };
-
-    fetchData();
-  }, []);
-  
   // Handle category tab change
   const handleCategoryChange = (categoryId: string) => {
     setActiveTab(categoryId);
@@ -1158,14 +925,7 @@ const ServiceProviderAdmin: React.FC = () => {
       // In a real implementation, you would use:
       // await axios.patch(`/api/service-providers/${id}`, { status: newStatus });
       
-      // For demo purposes, update the local state
-      setServiceProviders(prevProviders => 
-        prevProviders.map(provider => 
-          provider.id === id ? { ...provider, status: newStatus } : provider
-        )
-      );
-      
-      // Show success message
+      // For demo purposes, we'll just show a success message
       setSnackbar({
         open: true,
         message: `Provider status updated to ${newStatus}`,
@@ -1444,6 +1204,29 @@ const ServiceProviderAdmin: React.FC = () => {
           <Box display="flex" justifyContent="center" alignItems="center" py={4}>
             <CircularProgress sx={{ color: '#611463' }} />
           </Box>
+        ) : error ? (
+          <Paper
+            elevation={0}
+            sx={{
+              p: 3,
+              textAlign: 'center',
+              borderRadius: 1,
+              bgcolor: alpha('#f44336', 0.05),
+              border: '1px dashed',
+              borderColor: alpha('#f44336', 0.2)
+            }}
+          >
+            <Typography variant="h6" color="error" gutterBottom>
+              {error}
+            </Typography>
+            <Button
+              variant="contained"
+              color="error"
+              onClick={() => window.location.reload()}
+            >
+              ລອງໃຫມ່
+            </Button>
+          </Paper>
         ) : (
           <Grid container spacing={2}>
             {filteredProviders.length > 0 ? (
@@ -1521,3 +1304,20 @@ const ServiceProviderAdmin: React.FC = () => {
 };
 
 export default ServiceProviderAdmin;
+
+// Define interfaces for props
+interface ServiceProviderDetailProps {
+  open: boolean;
+  provider: ServiceProvider | null;
+  onClose: () => void;
+  onStatusChange: (id: number, newStatus: 'active' | 'inactive') => void;
+  onSave?: (provider: ServiceProvider) => void;
+  onDelete?: (id: number) => void;
+}
+
+interface ServiceCategory {
+  id: string;
+  title: string;
+  icon: React.ReactNode;
+  categoryType: string;
+}

@@ -13,11 +13,11 @@
     "@date-io/date-fns": "^3.2.1",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
-    "@mui/icons-material": "^5.16.14",
+    "@mui/icons-material": "^5.17.1",
     "@mui/material": "^5.17.1",
     "@reduxjs/toolkit": "^2.2.7",
     "@types/react-datepicker": "^6.2.0",
-    "axios": "^1.8.2",
+    "axios": "^1.8.4",
     "firebase": "^11.6.0",
     "react": "^18.3.1",
     "react-datepicker": "^8.2.1",
@@ -25,7 +25,7 @@
     "react-redux": "^9.2.0",
     "react-router-dom": "^6.30.0",
     "recharts": "^2.15.2",
-    "sweetalert2": "^11.6.13",
+    "sweetalert2": "^11.19.1",
     "swiper": "^11.1.8"
   },
   "devDependencies": {

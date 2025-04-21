@@ -1,21 +1,12 @@
 import { Box } from "@mui/material";
-import ServiceProviderForm from "./components/header";
+import EmployeeForm from "./components/header";
 
-const HomePage = () => {
+const EmployeePage = () => {
   return (
-    <Box
-      sx={{ display: "flex", flexDirection: "column", alignItems: "center" }}
-    >
-      <Box sx={{ maxWidth: 1300, width: "100%" }}>
-        <Box sx={{ width: "100%", mb: 2, overflow: "hidden" }}></Box>
-
-        <ServiceProviderForm />
-
-      </Box>
-
-      </Box>
-
+    <Box>
+      <EmployeeForm />
+    </Box>
   );
 };
 
-export default HomePage;
+export default EmployeePage;

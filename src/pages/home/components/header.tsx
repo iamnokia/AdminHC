@@ -204,7 +204,7 @@ const ServiceProviderForm = () => {
 
     return (
         <Container maxWidth="lg">
-            <Box component="form" onSubmit={handleSubmit} sx={{ width: "100%", mx: "auto", p: { xs: 1, sm: 3 } }}>
+            <Box sx={{ pt: 2, px: 3, ml: { xs: 0, sm: 30 } }}>
                 <Typography
                     variant={isMobile ? "h5" : "h4"}
                     component="h1"

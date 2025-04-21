@@ -280,7 +280,7 @@ const ServiceStatusAdmin: React.FC = () => {
   };
 
   return (
-    <Box sx={{ bgcolor: '#f5f5f5', minHeight: '100vh', py: 3 }}>
+    <Box sx={{ pt: 2, px: 3, ml: { xs: 0, sm: 30 } }}>
       <Container maxWidth="xl">
         {/* Header */}
         <Fade in={animate} timeout={800}>

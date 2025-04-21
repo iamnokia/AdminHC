@@ -180,12 +180,12 @@ const ServiceProviderReport = () => {
             <FormControl fullWidth size="small">
               <InputLabel>Category</InputLabel>
               <Select label="Category" defaultValue="">
-                <MenuItem value="">All Categories</MenuItem>
-                <MenuItem value="1">Cleaning</MenuItem>
-                <MenuItem value="2">Moving</MenuItem>
-                <MenuItem value="3">Plumbing</MenuItem>
-                <MenuItem value="4">Electrical</MenuItem>
-                <MenuItem value="5">Gardening</MenuItem>
+                <MenuItem value="">ປະເພດການບໍລິການທັງໝົດ</MenuItem>
+                <MenuItem value="1">ອະນາໄມ</MenuItem>
+                <MenuItem value="2">ຂົນຍ້າຍເຄື່ຶອງ</MenuItem>
+                <MenuItem value="3">ດູດສ້ວມ</MenuItem>
+                <MenuItem value="4">ສ້ອມແປງໄຟຟ້າ</MenuItem>
+                <MenuItem value="5">ຕັດຫຍ້າ</MenuItem>
               </Select>
             </FormControl>
           </Grid>
@@ -332,7 +332,7 @@ const ServiceProviderReport = () => {
   return (
     <Box>
       <Typography variant="h6" mb={3} fontWeight="bold" color="#611463">
-        Service Provider Report
+        ລາຍງານຜູ້ໃຫ້ບໍລິການ
       </Typography>
       
       <ActionButtons />
@@ -351,29 +351,29 @@ const ServiceProviderReport = () => {
           }
         }}
       >
-        <Tab label="All Providers" />
-        <Tab label="Moving Providers" />
-        <Tab label="Provider Statistics" />
+        <Tab label="ຜູ້ໃຊ້ບໍລິການທັງໝົດ" />
+        <Tab label="ຜູ້ໃຊ້ບໍລິການຂົນຍ້າຍ" />
+        <Tab label="ສະຖິຕິຂອງຜູ້ໃຊ້ບໍລິການ" />
       </Tabs>
       
       {/* Tab 1: All Providers */}
       {tabValue === 0 && (
         <Paper sx={{ p: 3, borderRadius: 2, mb: 3 }}>
           <Typography variant="subtitle1" mb={3} fontWeight="bold">
-            Service Provider List
+            ລາຍຊື່ຜູ້ໃຫ້ບໍລິການ
           </Typography>
           <TableContainer>
             <Table>
               <TableHead sx={{ bgcolor: '#fafafa' }}>
                 <TableRow>
                   <TableCell></TableCell>
-                  <TableCell sx={{ fontWeight: 'bold' }}>Provider</TableCell>
-                  <TableCell sx={{ fontWeight: 'bold' }}>Category</TableCell>
-                  <TableCell sx={{ fontWeight: 'bold' }}>Contact</TableCell>
-                  <TableCell sx={{ fontWeight: 'bold' }}>Price</TableCell>
-                  <TableCell sx={{ fontWeight: 'bold' }}>City</TableCell>
-                  <TableCell sx={{ fontWeight: 'bold' }}>Status</TableCell>
-                  <TableCell sx={{ fontWeight: 'bold' }}>Actions</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold' }}>ຜູ້ໃຫ້ບໍລິການ</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold' }}>ປະເພດ</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold' }}>ຕິດຕໍ່</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold' }}>ລາຄາ</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold' }}>ເມືອງ</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold' }}>ສະຖານະ</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold' }}>ການຈັດການ</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -586,20 +586,20 @@ const ServiceProviderReport = () => {
       {tabValue === 1 && (
         <Paper sx={{ p: 3, borderRadius: 2, mb: 3 }}>
           <Typography variant="subtitle1" mb={3} fontWeight="bold">
-            Moving Service Providers with Vehicles
+            ລາຍຊື່ຜູ້ໃຫ້ບໍລິການດ້ວຍຍານພາຫະນະ
           </Typography>
           <TableContainer>
             <Table>
               <TableHead sx={{ bgcolor: '#fafafa' }}>
                 <TableRow>
-                  <TableCell sx={{ fontWeight: 'bold' }}>Provider</TableCell>
-                  <TableCell sx={{ fontWeight: 'bold' }}>Contact</TableCell>
-                  <TableCell sx={{ fontWeight: 'bold' }}>Price</TableCell>
-                  <TableCell sx={{ fontWeight: 'bold' }}>Car Brand</TableCell>
-                  <TableCell sx={{ fontWeight: 'bold' }}>Model</TableCell>
-                  <TableCell sx={{ fontWeight: 'bold' }}>License Plate</TableCell>
-                  <TableCell sx={{ fontWeight: 'bold' }}>Car Status</TableCell>
-                  <TableCell sx={{ fontWeight: 'bold' }}>Actions</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold' }}>ລາຍຊື່ຜູ້ໃຫ້ບໍລິການ</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold' }}>ຕິດຕໍ່</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold' }}>ລາຄາ</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold' }}>ລູ້ນລົດ</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold' }}>ຍີຫໍ້ລົດ</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold' }}>ປ້າຍທະບຽນ</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold' }}>ສະຖານະ</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold' }}>ການຈັດການ</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -679,7 +679,7 @@ const ServiceProviderReport = () => {
           <Grid item xs={12} md={6}>
             <Paper sx={{ p: 3, borderRadius: 2 }}>
               <Typography variant="subtitle1" mb={2} fontWeight="bold">
-                Providers by Category
+                ຜູ້ໃຊ້ບໍລິການຕາມໝວດໝູ່
               </Typography>
               <ResponsiveContainer width="100%" height={300}>
                 <PieChart>
@@ -707,7 +707,7 @@ const ServiceProviderReport = () => {
           <Grid item xs={12} md={6}>
             <Paper sx={{ p: 3, borderRadius: 2 }}>
               <Typography variant="subtitle1" mb={2} fontWeight="bold">
-                Provider Status Distribution
+                ສະຖານະຂອງຜູ້ໃຫ້ບໍລິການແບບສະເລ່ຍ
               </Typography>
               <ResponsiveContainer width="100%" height={300}>
                 <PieChart>
@@ -734,7 +734,7 @@ const ServiceProviderReport = () => {
           <Grid item xs={12}>
             <Paper sx={{ p: 3, borderRadius: 2 }}>
               <Typography variant="subtitle1" mb={2} fontWeight="bold">
-                Price Range Distribution
+                ອັດຕາທີ່ເພີ່ມຂຶ້ນຂອງລາຄາແຕ່ລະໄລຍະ
               </Typography>
               <ResponsiveContainer width="100%" height={300}>
                 <BarChart data={priceRangeData}>

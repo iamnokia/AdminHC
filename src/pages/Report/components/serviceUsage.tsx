@@ -162,7 +162,7 @@ const ServiceUsageReport = () => {
         <Grid item xs={12} md={8}>
           <Paper sx={{ p: 3, borderRadius: 2, height: '100%' }}>
             <Typography variant="subtitle1" mb={2} fontWeight="bold">
-              Monthly Service Usage
+              ການໃຊ້ບໍລິການລາຍເດືອນ
             </Typography>
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={usageData}>
@@ -171,8 +171,8 @@ const ServiceUsageReport = () => {
                 <YAxis />
                 <Tooltip />
                 <Legend />
-                <Bar dataKey="sessions" fill="#611463" name="Service Sessions" />
-                <Bar dataKey="users" fill="#f7981e" name="Unique Users" />
+                <Bar dataKey="sessions" fill="#611463" name="ພາກສ່ວນການບໍລິການ" />
+                <Bar dataKey="users" fill="#f7981e" name="ຜູ້ໃຊ້ບໍລິການປະຈຳ" />
               </BarChart>
             </ResponsiveContainer>
           </Paper>
@@ -180,22 +180,22 @@ const ServiceUsageReport = () => {
         <Grid item xs={12} md={4}>
           <Paper sx={{ p: 3, borderRadius: 2, height: '100%' }}>
             <Typography variant="subtitle1" mb={2} fontWeight="bold">
-              Usage Summary
+              ສະຫຼູບການໃຊ້ງານ
             </Typography>
             <Box sx={{ mb: 2 }}>
-              <Typography variant="body2" color="text.secondary">Total Sessions</Typography>
+              <Typography variant="body2" color="text.secondary">ຈຳນວນພາກສ່ວນທັງໝົດ</Typography>
               <Typography variant="h4" color="#611463" fontWeight="bold">1,606</Typography>
             </Box>
             <Box sx={{ mb: 2 }}>
-              <Typography variant="body2" color="text.secondary">Total Users</Typography>
+              <Typography variant="body2" color="text.secondary">ຈຳນວນຜູ້ໃຊ້ບໍລິການທັງໝົດ</Typography>
               <Typography variant="h4" color="#f7981e" fontWeight="bold">952</Typography>
             </Box>
             <Box sx={{ mb: 2 }}>
-              <Typography variant="body2" color="text.secondary">Average Sessions per User</Typography>
+              <Typography variant="body2" color="text.secondary">ຈຳນວນສະເລ່ຍຜູ່ໃຊ້ບໍລິການຕໍ່ຄົນ</Typography>
               <Typography variant="h4" color="#611463" fontWeight="bold">1.7</Typography>
             </Box>
             <Box>
-              <Typography variant="body2" color="text.secondary">Growth Rate</Typography>
+              <Typography variant="body2" color="text.secondary">ອັດຕາທີ່ເພີ່ມຂຶ້ນ</Typography>
               <Typography variant="h4" color="#f7981e" fontWeight="bold">+12.4%</Typography>
             </Box>
           </Paper>

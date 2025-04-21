@@ -163,7 +163,7 @@ const PaymentReport = () => {
         <Grid item xs={12}>
           <Paper sx={{ p: 3, borderRadius: 2 }}>
             <Typography variant="subtitle1" mb={2} fontWeight="bold">
-              Monthly Revenue Overview
+              ພາບລວມລາຍໄດ້ແບບລາຍເດືອນ
             </Typography>
             <ResponsiveContainer width="100%" height={300}>
               <LineChart data={paymentData}>
@@ -222,17 +222,17 @@ const PaymentReport = () => {
         <Grid item xs={12}>
           <Paper sx={{ p: 3, borderRadius: 2 }}>
             <Typography variant="subtitle1" mb={2} fontWeight="bold">
-              Recent Transactions
+              ການເຮັດທູລະກຳລ້າສຸດ
             </Typography>
             <Box sx={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
                   <tr style={{ borderBottom: '1px solid #e0e0e0' }}>
-                    <th style={{ padding: '12px 8px', textAlign: 'left' }}>Date</th>
-                    <th style={{ padding: '12px 8px', textAlign: 'left' }}>Transaction ID</th>
-                    <th style={{ padding: '12px 8px', textAlign: 'left' }}>Service</th>
-                    <th style={{ padding: '12px 8px', textAlign: 'left' }}>Amount</th>
-                    <th style={{ padding: '12px 8px', textAlign: 'left' }}>Status</th>
+                    <th style={{ padding: '12px 8px', textAlign: 'left' }}>ວັນທີ</th>
+                    <th style={{ padding: '12px 8px', textAlign: 'left' }}>ລະຫັດທຸລະກຳ</th>
+                    <th style={{ padding: '12px 8px', textAlign: 'left' }}>ການບໍລິການ</th>
+                    <th style={{ padding: '12px 8px', textAlign: 'left' }}>ຈຳນວນເງີນ</th>
+                    <th style={{ padding: '12px 8px', textAlign: 'left' }}>ສະຖານະ</th>
                   </tr>
                 </thead>
                 <tbody>

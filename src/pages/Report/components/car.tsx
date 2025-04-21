@@ -164,18 +164,18 @@ const CarReport = () => {
       
       <Paper sx={{ p: 3, borderRadius: 2 }}>
         <Typography variant="subtitle1" mb={3} fontWeight="bold">
-          Car Records
+          ບັນທຶກປະຫວັດຂອງຍານພາຫະນະ
         </Typography>
         <Box sx={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ borderBottom: '2px solid #e0e0e0', backgroundColor: '#f8f8f8' }}>
-                <th style={{ padding: '12px 16px', textAlign: 'left' }}>Date</th>
-                <th style={{ padding: '12px 16px', textAlign: 'left' }}>Service Type</th>
-                <th style={{ padding: '12px 16px', textAlign: 'left' }}>Provider</th>
-                <th style={{ padding: '12px 16px', textAlign: 'left' }}>Status</th>
-                <th style={{ padding: '12px 16px', textAlign: 'left' }}>Amount</th>
-                <th style={{ padding: '12px 16px', textAlign: 'left' }}>Actions</th>
+                <th style={{ padding: '12px 16px', textAlign: 'left' }}>ວັນທີ</th>
+                <th style={{ padding: '12px 16px', textAlign: 'left' }}>ປະເພດການບໍລິການ</th>
+                <th style={{ padding: '12px 16px', textAlign: 'left' }}>ລາຍຊື່ຜູ້ໃຫ້ບໍລິການ</th>
+                <th style={{ padding: '12px 16px', textAlign: 'left' }}>ສະຖານະ</th>
+                <th style={{ padding: '12px 16px', textAlign: 'left' }}>ຈຳນວນເງີນ</th>
+                <th style={{ padding: '12px 16px', textAlign: 'left' }}>ການຈັດການ</th>
               </tr>
             </thead>
             <tbody>
@@ -307,7 +307,7 @@ const CarReport = () => {
         <Grid item xs={12} md={4}>
           <Paper sx={{ p: 3, borderRadius: 2 }}>
             <Typography variant="subtitle1" mb={2} fontWeight="bold">
-              Car Type Distribution
+              ອັດຕາສະເລ່ຍທີ່ປະເພດບານພາຫະນະທີ່ຖືກເອີ້ນໃຊ້
             </Typography>
             <ResponsiveContainer width="100%" height={200}>
               <PieChart>
@@ -345,7 +345,7 @@ const CarReport = () => {
         <Grid item xs={12} md={8}>
           <Paper sx={{ p: 3, borderRadius: 2 }}>
             <Typography variant="subtitle1" mb={2} fontWeight="bold">
-              Monthly Car Usage
+              ການໃຊ້ຍານພາຫະນະລາຍເດືອນ
             </Typography>
             <ResponsiveContainer width="100%" height={200}>
               <BarChart data={[

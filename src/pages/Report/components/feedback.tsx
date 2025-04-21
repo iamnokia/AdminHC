@@ -164,7 +164,7 @@ const FeedbackReport = () => {
         <Grid item xs={12} md={5}>
           <Paper sx={{ p: 3, borderRadius: 2 }}>
             <Typography variant="subtitle1" mb={2} fontWeight="bold">
-              Feedback Distribution
+              ອັດຕາຂອງຄຳຕິຊົມ
             </Typography>
             <ResponsiveContainer width="100%" height={300}>
               <PieChart>
@@ -192,7 +192,7 @@ const FeedbackReport = () => {
         <Grid item xs={12} md={7}>
           <Paper sx={{ p: 3, borderRadius: 2 }}>
             <Typography variant="subtitle1" mb={2} fontWeight="bold">
-              Feedback Metrics
+              ຕົວຊີ້ວັດຄຳຕິຊົມ
             </Typography>
             <Grid container spacing={2}>
               <Grid item xs={6} md={3}>
@@ -224,7 +224,7 @@ const FeedbackReport = () => {
             <Divider sx={{ my: 3 }} />
             
             <Typography variant="subtitle1" mb={2} fontWeight="bold">
-              Recent Feedback
+              ຂໍ້ສະເໜີຄຳຕິຊົມ
             </Typography>
             <Box sx={{ maxHeight: 300, overflow: 'auto' }}>
               <Box sx={{ p: 2, borderLeft: '4px solid #611463', mb: 2, bgcolor: '#f9f5fa' }}>

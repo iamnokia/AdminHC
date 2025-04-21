@@ -71,7 +71,7 @@ const ServiceStatusAdmin: React.FC = () => {
     {
       id: 1,
       title: 'ພະນັກງານຮອດແລ້ວ',
-      description: 'ພະນັກງານຮອດເຮືອນຂອງທ່ານແລ້ວ',
+      description: 'ພະນັກງານຮອດເຮືອນຂອງທ່ານແລ້ວ nah jah',
       icon: <AccessTimeIcon sx={{ fontSize: 24 }} />,
       color: '#00BFA6',
     },

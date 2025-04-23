@@ -1,11 +1,20 @@
-import React from "react";
+import React, { useState } from "react";
 import {
-  Box, Typography, TextField, Button, Grid,
-  Paper, FormHelperText, Container, InputLabel
+  Box,
+  Typography,
+  TextField,
+  Button,
+  Grid,
+  Paper,
+  Container,
+  FormControlLabel,
+  Switch,
 } from "@mui/material";
-import { DirectionsCar, CloudUpload } from "@mui/icons-material";
-import { useCarController } from "../controllers/index";
+import { DirectionsCar } from "@mui/icons-material";
 import { styled } from "@mui/system";
+import { useParams } from "react-router-dom";
+import axios from "axios";
+import Swal from "sweetalert2";
 
 const StyledPaper = styled(Paper)(({ theme }) => ({
   padding: theme.spacing(4),
@@ -14,32 +23,99 @@ const StyledPaper = styled(Paper)(({ theme }) => ({
   boxShadow: "0 8px 24px rgba(0, 0, 0, 0.05)",
 }));
 
-const UploadButton = styled(Button)({
-  padding: "12px 24px",
-  marginTop: 8,
-  backgroundColor: "rgba(97, 20, 99, 0.04)",
-  color: "#611463",
-  border: "1px dashed rgba(97, 20, 99, 0.3)",
-  "&:hover": {
-    backgroundColor: "rgba(97, 20, 99, 0.08)",
-    borderColor: "#611463"
-  }
-});
-
-const CarForm = ({ employeeId }: { employeeId: number }) => {
-  const {
-    formData,
-    errors,
-    handleChange,
-    handleFileChange,
-    handleSubmit
-  } = useCarController(employeeId);
+const CarForm = () => {
+  const { employeeId } = useParams();
+  const empId = employeeId ? parseInt(employeeId) : 0;
+  
+  const [loading, setLoading] = useState(false);
+  
+  // Form state - minimal required fields only
+  const [carBrand, setCarBrand] = useState("");
+  const [model, setModel] = useState("");
+  const [licensePlate, setLicensePlate] = useState("");
+  const [status, setStatus] = useState("ACTIVE");
+  
+  // Handle submission with minimal validation
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    // Only validate that we have the basic required data
+    if (!carBrand.trim() || !model.trim() || !licensePlate.trim()) {
+      Swal.fire({
+        title: "ກະລຸນາກວດສອບຂໍ້ມູນ",
+        text: "ກະລຸນາປ້ອນຂໍ້ມູນລົດໃຫ້ຄົບຖ້ວນ",
+        icon: "warning",
+        confirmButtonText: "ຕົກລົງ",
+        confirmButtonColor: "#611463"
+      });
+      return;
+    }
+    
+    setLoading(true);
+    
+    try {
+      // Prepare minimal data
+      const carData = {
+        emp_id: empId,
+        car_brand: carBrand,
+        model: model,
+        license_plate: licensePlate,
+        status: status
+      };
+      
+      console.log("Submitting car data:", carData);
+      
+      // Make the API request directly as JSON
+      const response = await axios.post(
+        "https://homecare-pro.onrender.com/emp_car/create_emp_car",
+        carData,
+        {
+          headers: {
+            "Content-Type": "application/json"
+          }
+        }
+      );
+      
+      console.log("API response:", response.data);
+      
+      // Show success message
+      Swal.fire({
+        title: "ສຳເລັດ!",
+        text: "ບັນທຶກຂໍ້ມູນລົດສຳເລັດ",
+        icon: "success",
+        confirmButtonText: "ຕົກລົງ",
+        confirmButtonColor: "#611463"
+      });
+      
+      // Reset form
+      setCarBrand("");
+      setModel("");
+      setLicensePlate("");
+    } catch (error) {
+      console.error("Error submitting car data:", error);
+      
+      // Show error message
+      Swal.fire({
+        title: "ຂໍ້ຜິດພາດ!",
+        text: "ບໍ່ສາມາດບັນທຶກຂໍ້ມູນລົດ",
+        icon: "error",
+        confirmButtonText: "ຕົກລົງ",
+        confirmButtonColor: "#611463"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <Container maxWidth="lg">
       <Box py={2} px={3} ml={{ xs: 0, sm: 30 }}>
         <Typography variant="h5" fontWeight={700} color="#611463" mb={3}>
           <DirectionsCar sx={{ mr: 1 }} /> ເພີ່ມຂໍ້ມູນລົດ
+        </Typography>
+        
+        <Typography variant="body1" color="text.secondary" mb={3}>
+          ລະຫັດຜູ້ໃຫ້ບໍລິການ: <strong>{empId}</strong>
         </Typography>
 
         <form onSubmit={handleSubmit}>
@@ -49,11 +125,8 @@ const CarForm = ({ employeeId }: { employeeId: number }) => {
                 <TextField
                   fullWidth
                   label="ຍີ່ຫໍ້ລົດ"
-                  name="car_brand"
-                  value={formData.car_brand}
-                  onChange={handleChange}
-                  error={!!errors.car_brand}
-                  helperText={errors.car_brand}
+                  value={carBrand}
+                  onChange={(e) => setCarBrand(e.target.value)}
                   required
                 />
               </Grid>
@@ -61,11 +134,8 @@ const CarForm = ({ employeeId }: { employeeId: number }) => {
                 <TextField
                   fullWidth
                   label="ຮຸ່ນລົດ"
-                  name="model"
-                  value={formData.model}
-                  onChange={handleChange}
-                  error={!!errors.model}
-                  helperText={errors.model}
+                  value={model}
+                  onChange={(e) => setModel(e.target.value)}
                   required
                 />
               </Grid>
@@ -73,33 +143,22 @@ const CarForm = ({ employeeId }: { employeeId: number }) => {
                 <TextField
                   fullWidth
                   label="ປ້າຍທະບຽນ"
-                  name="license_plate"
-                  value={formData.license_plate}
-                  onChange={handleChange}
-                  error={!!errors.license_plate}
-                  helperText={errors.license_plate}
+                  value={licensePlate}
+                  onChange={(e) => setLicensePlate(e.target.value)}
                   required
                 />
               </Grid>
-              <Grid item xs={12}>
-                <InputLabel>ຮູບລົດ *</InputLabel>
-                <UploadButton
-                  component="label"
-                  startIcon={<CloudUpload />}
-                >
-                  {formData.car_image?.name || "ເລືອກຮູບ"}
-                  <input
-                    type="file"
-                    name="car_image"
-                    onChange={handleFileChange}
-                    hidden
-                    accept="image/*"
-                    required
-                  />
-                </UploadButton>
-                <FormHelperText error={!!errors.car_image}>
-                  {errors.car_image}
-                </FormHelperText>
+              <Grid item xs={12} sm={6}>
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={status === "ACTIVE"}
+                      onChange={(e) => setStatus(e.target.checked ? "ACTIVE" : "INACTIVE")}
+                      color="success"
+                    />
+                  }
+                  label="ພ້ອມໃຊ້ງານ"
+                />
               </Grid>
             </Grid>
           </StyledPaper>
@@ -109,6 +168,7 @@ const CarForm = ({ employeeId }: { employeeId: number }) => {
               type="submit"
               variant="contained"
               size="large"
+              disabled={loading}
               sx={{
                 bgcolor: "#f7931e",
                 color: "white",

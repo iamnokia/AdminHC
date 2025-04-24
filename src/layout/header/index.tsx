@@ -32,7 +32,7 @@ function ResponsiveAppBar() {
     { to: HOME_PATH, label: "ເພີ່ມຂໍ້ມູນຜູ້ໃຫ້ບໍລິການ", icon: <AddBusinessSharpIcon /> },
     { to: SELECT_EMPLOYEE_PATH, label: "ເພີ່ມຂໍ້ມູນລົດ", icon: <AirportShuttleRoundedIcon /> },
     { to: SERVICE_STATUS_PATH, label: "ສະຖານະການບໍລິການ", icon: <BookIcon /> },
-    { to: REPORT_PATH, label: "ການລາຍງານ", icon: <FlagCircleSharpIcon /> },
+    { to: REPORT_PATH, label: "ລາຍງານ", icon: <FlagCircleSharpIcon /> },
 
   ];
 

@@ -16,7 +16,6 @@ import {
   Paper,
   Tabs,
   Tab,
-  useTheme,
   alpha,
   Switch,
   CircularProgress,
@@ -42,11 +41,11 @@ import {
   Category as CategoryIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
-  Save as SaveIcon
+  Save as SaveIcon,
+  CameraAlt as CameraAltIcon
 } from '@mui/icons-material';
 import useMainController from '../controllers/index';
 import { CarModel } from '../../../models/car';
-import axios from 'axios';
 
 // Available cities for dropdown with English and Lao names
 const cities = [
@@ -59,20 +58,52 @@ const cities = [
   { en: 'HADXAIFONG', lo: 'ຫາດຊາຍຟອງ' }
 ];
 
-// Helper function to translate English city names to Lao for display
-const displayCityInLao = (englishCity) => {
-  const cityObj = cities.find(c => c.en === englishCity);
-  return cityObj ? cityObj.lo : englishCity;
-};
-// You'll need to add this const at the component level or in a separate constants file
+// Available genders
 const genders = [
   { en: 'Male', lo: 'ຊາຍ' },
   { en: 'Female', lo: 'ຍິງ' },
   { en: 'Other', lo: 'ອື່ນໆ' }
 ];
 
-// Add this helper function to translate English gender values to Lao for display
-const displayGenderInLao = (englishGender) => {
+// Define service category interface
+interface ServiceCategory {
+  id: string;
+  title: string;
+  icon: React.ReactNode;
+  categoryType: string;
+}
+
+// Define ServiceProvider interface
+interface ServiceProvider {
+  id: number;
+  first_name: string;
+  last_name: string;
+  email: string;
+  tel: string;
+  password?: string;
+  address: string;
+  gender?: string;
+  cv: string;
+  avatar: string;
+  cat_id: number;
+  cat_name?: string;
+  price: number;
+  status: string;
+  city?: string;
+  categoryType: string;
+  car?: CarModel;
+}
+
+// Helper function to translate English city names to Lao for display
+const displayCityInLao = (englishCity: string | undefined): string => {
+  if (!englishCity) return '';
+  const cityObj = cities.find(c => c.en === englishCity);
+  return cityObj ? cityObj.lo : englishCity;
+};
+
+// Helper function to translate English gender values to Lao for display
+const displayGenderInLao = (englishGender: string | undefined): string => {
+  if (!englishGender) return '';
   const genderObj = genders.find(g => g.en === englishGender);
   return genderObj ? genderObj.lo : englishGender;
 };
@@ -106,6 +137,10 @@ const ServiceProviderAdmin: React.FC = () => {
   const [isEditing, setIsEditing] = useState<boolean>(false);
   const [editedProvider, setEditedProvider] = useState<ServiceProvider | null>(null);
   const [editedCar, setEditedCar] = useState<CarModel | null>(null);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [carImageFile, setCarImageFile] = useState<File | null>(null);
+  const [carImagePreview, setCarImagePreview] = useState<string | null>(null);
   const [snackbar, setSnackbar] = useState<{
     open: boolean;
     message: string;
@@ -116,7 +151,16 @@ const ServiceProviderAdmin: React.FC = () => {
     severity: 'success'
   });
 
-  const { loading, error, serviceProviders, handleNavigate } = useMainController();
+  const { 
+    loading, 
+    error, 
+    serviceProviders, 
+    handleNavigate,
+    handleUpdateEmployee,
+    handleUpdateCar,
+    handleUpdateStatus,
+    handleDeleteEmployee
+  } = useMainController();
 
   // Define service categories
   const serviceCategories: ServiceCategory[] = [
@@ -171,7 +215,7 @@ const ServiceProviderAdmin: React.FC = () => {
   ];
 
   // Handle category tab change
-  const handleCategoryChange = (categoryId: string) => {
+  const handleCategoryChange = (event: React.SyntheticEvent, categoryId: string) => {
     setActiveTab(categoryId);
   };
 
@@ -184,6 +228,10 @@ const ServiceProviderAdmin: React.FC = () => {
     } else {
       setEditedCar(null);
     }
+    setImageFile(null);
+    setImagePreview(null);
+    setCarImageFile(null);
+    setCarImagePreview(null);
     setDialogOpen(true);
   };
 
@@ -191,6 +239,10 @@ const ServiceProviderAdmin: React.FC = () => {
   const handleCloseDialog = () => {
     setDialogOpen(false);
     setIsEditing(false);
+    setImageFile(null);
+    setImagePreview(null);
+    setCarImageFile(null);
+    setCarImagePreview(null);
   };
 
   // Toggle edit mode
@@ -206,6 +258,10 @@ const ServiceProviderAdmin: React.FC = () => {
         setEditedCar({ ...selectedProvider.car });
       }
     }
+    setImageFile(null);
+    setImagePreview(null);
+    setCarImageFile(null);
+    setCarImagePreview(null);
     setIsEditing(false);
   };
 
@@ -219,34 +275,51 @@ const ServiceProviderAdmin: React.FC = () => {
     }
   };
 
-  // Update provider status (active/inactive)
-  const handleStatusChange = async (id: number, newStatus: 'active' | 'inactive') => {
-    try {
-      // In a real implementation, you would use:
-      // await axios.patch(`https://homecare-pro.onrender.com/employees/update_employees/${id}`, { status: newStatus });
-
-      // For demo purposes, we'll just show a success message
-      setSnackbar({
-        open: true,
-        message: `ການອັບເດດສະຖານະສຳເລັດ ${newStatus}`,
-        severity: "success"
-      });
-    } catch (error) {
-      console.error("ລົ້ມເຫຼວການອັບເດດ:", error);
-      setSnackbar({
-        open: true,
-        message: "ການອັບເດດສະຖານະລົ້ມເຫຼວ",
-        severity: "error"
+  // Handle car field change in edit mode
+  const handleCarFieldChange = (field: keyof CarModel, value: any) => {
+    if (editedCar) {
+      setEditedCar({
+        ...editedCar,
+        [field]: value
       });
     }
   };
 
-  // Save edited provider
+  // Handle image selection
+  const handleImageSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setImageFile(file);
+      
+      // Create preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Handle car image selection
+  const handleCarImageSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setCarImageFile(file);
+      
+      // Create preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setCarImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Save provider using controller
   const handleSaveProvider = async () => {
     try {
       if (!editedProvider) return;
 
-      // Prepare data for API in the expected format
       const dataToUpdate = {
         id: editedProvider.id,
         first_name: editedProvider.first_name,
@@ -257,25 +330,30 @@ const ServiceProviderAdmin: React.FC = () => {
         address: editedProvider.address,
         gender: editedProvider.gender,
         cv: editedProvider.cv,
-        avatar: editedProvider.avatar,
         cat_id: editedProvider.cat_id,
         price: editedProvider.price,
-        status: editedProvider.status
+        status: editedProvider.status,
+        city: editedProvider.city
       };
 
-      // Make the actual API call to update the employee
-      await axios.put(
-   `https://homecare-pro.onrender.com/employees/update_employees/${editedProvider.id}`,
-        dataToUpdate,
-        {
-          headers: {
-            'Content-Type': 'application/json'
-          }
-        }
-      );
+      // Call controller function with optional image file
+      await handleUpdateEmployee(editedProvider.id, dataToUpdate, imageFile || undefined);
 
-      setSelectedProvider(editedProvider);
+      // If car exists, update it too
+      if (editedCar && editedProvider.cat_id === 5) {
+        await handleUpdateCar(editedCar.id, {
+          car_brand: editedCar.car_brand,
+          model: editedCar.model,
+          license_plate: editedCar.license_plate
+        }, carImageFile || undefined);
+      }
+
       setIsEditing(false);
+      setImageFile(null);
+      setImagePreview(null);
+      setCarImageFile(null);
+      setCarImagePreview(null);
+      setDialogOpen(false);
 
       setSnackbar({
         open: true,
@@ -283,7 +361,7 @@ const ServiceProviderAdmin: React.FC = () => {
         severity: "success"
       });
     } catch (error) {
-      console.error("ລົ້ມເຫຼວໃນການແກ້ໄຂ:", error);
+      console.error("Error saving provider:", error);
       setSnackbar({
         open: true,
         message: "ການແກ້ໄຂຂໍ້ມູນຜູ້ໃຫ້ບໍລິການລົ້ມເຫຼວ",
@@ -292,24 +370,40 @@ const ServiceProviderAdmin: React.FC = () => {
     }
   };
 
-  // Delete provider
-  const handleDeleteProvider = async (id: number) => {
+  // Handle status change using controller
+  const handleProviderStatusChange = async (id: number, newStatus: 'active' | 'inactive') => {
     try {
-      // In a real implementation, you would use:
-      // await axios.delete(`https://homecare-pro.onrender.com/employees/delete_employees/${id}`);
-
-      setDialogOpen(false);
-
+      await handleUpdateStatus(id, newStatus);
       setSnackbar({
         open: true,
-        message: "Provider deleted successfully",
+        message: `ການອັບເດດສະຖານະສຳເລັດ ${newStatus}`,
+        severity: "success"
+      });
+    } catch (error) {
+      console.error("Error updating status:", error);
+      setSnackbar({
+        open: true,
+        message: "ການອັບເດດສະຖານະລົ້ມເຫຼວ",
+        severity: "error"
+      });
+    }
+  };
+
+  // Handle delete using controller
+  const handleDeleteProviderAction = async (id: number) => {
+    try {
+      await handleDeleteEmployee(id);
+      setDialogOpen(false);
+      setSnackbar({
+        open: true,
+        message: "ລຶບຂໍ້ມູນຜູ້ໃຫ້ບໍລິການສຳເລັດ",
         severity: "success"
       });
     } catch (error) {
       console.error("Error deleting provider:", error);
       setSnackbar({
         open: true,
-        message: "Failed to delete provider",
+        message: "ລຶບຂໍ້ມູນຜູ້ໃຫ້ບໍລິການລົ້ມເຫຼວ",
         severity: "error"
       });
     }
@@ -344,7 +438,7 @@ const ServiceProviderAdmin: React.FC = () => {
       {/* Category Tabs */}
       <Tabs
         value={activeTab}
-        onChange={(_, value) => handleCategoryChange(value)}
+        onChange={handleCategoryChange}
         variant="scrollable"
         scrollButtons="auto"
         sx={{
@@ -611,7 +705,7 @@ const ServiceProviderAdmin: React.FC = () => {
                   <ServiceProviderCard
                     provider={provider}
                     onViewDetails={handleViewDetails}
-                    onStatusChange={handleStatusChange}
+                    onStatusChange={handleProviderStatusChange}
                   />
                 </Grid>
               ))
@@ -710,7 +804,7 @@ const ServiceProviderAdmin: React.FC = () => {
                   <IconButton
                     edge="end"
                     color="inherit"
-                    onClick={() => handleDeleteProvider(selectedProvider.id)}
+                    onClick={() => handleDeleteProviderAction(selectedProvider.id)}
                     aria-label="delete"
                     sx={{ mr: 1 }}
                   >
@@ -740,22 +834,49 @@ const ServiceProviderAdmin: React.FC = () => {
                       alignItems="center"
                       mb={3}
                     >
-                      <Box
-                        component="img"
-                        src={editedProvider.avatar}
-                        sx={{
-                          width: 120,
-                          height: 120,
-                          mb: 2,
-                          borderRadius: '50%',
-                          border: '4px solid',
-                          borderColor: '#f7931e',
-                          objectFit: 'cover'
-                        }}
-                        alt={`${editedProvider.first_name} ${editedProvider.last_name}`}
-                      />
-                      {isEditing ? (
-                        <>
+                      {/* Avatar with edit capability */}
+                      <Box sx={{ position: 'relative', mb: 2 }}>
+                        <Box
+                          component="img"
+                          src={imagePreview || editedProvider.avatar}
+                          sx={{
+                            width: 120,
+                            height: 120,
+                            borderRadius: '50%',
+                            border: '4px solid',
+                            borderColor: '#f7931e',
+                            objectFit: 'cover'
+                          }}
+                          alt={`${editedProvider.first_name} ${editedProvider.last_name}`}
+                        />
+                        
+                        {isEditing && (
+                          <IconButton
+                            sx={{
+                              position: 'absolute',
+                              bottom: 0,
+                              right: 0,
+                              bgcolor: '#611463',
+                              color: 'white',
+                              '&:hover': { bgcolor: '#4e1050' },
+                              padding: '8px',
+                              borderRadius: '50%',
+                              border: '2px solid white'
+                            }}
+                            component="label"
+                          >
+                            <CameraAltIcon fontSize="small" />
+                            <input
+                              hidden
+                              accept="image/*"
+                              type="file"
+                              onChange={handleImageSelect}
+                            />
+                          </IconButton>
+                        )}
+                      </Box>
+                      
+                      {isEditing ? (<>
                           <TextField
                             label="ຊື່"
                             value={editedProvider.first_name}
@@ -800,6 +921,7 @@ const ServiceProviderAdmin: React.FC = () => {
                       </Box>
                     </Box>
 
+                    {/* Status */}
                     <Paper
                       elevation={0}
                       sx={{
@@ -827,13 +949,14 @@ const ServiceProviderAdmin: React.FC = () => {
                         onChange={(e) => {
                           const newStatus = e.target.checked ? 'active' : 'inactive';
                           handleFieldChange('status', newStatus);
-                          handleStatusChange(editedProvider.id, newStatus);
+                          handleProviderStatusChange(editedProvider.id, newStatus);
                         }}
                         color={editedProvider.status === 'active' ? 'success' : 'error'}
                         disabled={isEditing}
                       />
                     </Paper>
 
+                    {/* General Info */}
                     <Box>
                       <Typography variant="h6" color="#611463" fontWeight="bold">
                         ຂໍ້ມູນທົ່ວໄປ
@@ -998,7 +1121,7 @@ const ServiceProviderAdmin: React.FC = () => {
                         <Box sx={{ mt: 3 }}>
                           <Typography variant="h6" color="#611463" fontWeight="bold" display="flex" alignItems="center">
                             <CarIcon sx={{ mr: 1 }} />
-                            ຂໍ້ມູນລົດ (ບໍ່ສາມາດແກ້ໄຂໄດ້)
+                            ຂໍ້ມູນລົດ
                           </Typography>
 
                           <Box
@@ -1010,55 +1133,116 @@ const ServiceProviderAdmin: React.FC = () => {
                               overflow: 'hidden'
                             }}
                           >
-                            <Box
-                              component="img"
-                              src={editedCar.car_image}
-                              alt={`${editedCar.car_brand} ${editedCar.model}`}
-                              sx={{
-                                width: '100%',
-                                height: 200,
-                                objectFit: 'cover'
-                              }}
-                            />
+                            <Box sx={{ position: 'relative' }}>
+                              <Box
+                                component="img"
+                                src={carImagePreview || editedCar.car_image}
+                                alt={`${editedCar.car_brand} ${editedCar.model}`}
+                                sx={{
+                                  width: '100%',
+                                  height: 200,
+                                  objectFit: 'cover'
+                                }}
+                              />
+                              
+                              {isEditing && (
+                                <IconButton
+                                  sx={{
+                                    position: 'absolute',
+                                    top: 8,
+                                    right: 8,
+                                    bgcolor: '#611463',
+                                    color: 'white',
+                                    '&:hover': { bgcolor: '#4e1050' },
+                                    padding: '8px',
+                                    borderRadius: '50%',
+                                    boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                                  }}
+                                  component="label"
+                                >
+                                  <CameraAltIcon fontSize="small" />
+                                  <input
+                                    hidden
+                                    accept="image/*"
+                                    type="file"
+                                    onChange={handleCarImageSelect}
+                                  />
+                                </IconButton>
+                              )}
+                            </Box>
 
                             <Box sx={{ p: 2, bgcolor: 'white' }}>
                               <Grid container spacing={2}>
-                                <Grid item xs={6}>
-                                  <Typography variant="body2" color="text.secondary">
-                                    ຍີ່ຫໍ້
-                                  </Typography>
-                                  <Typography variant="body1" fontWeight="medium">
-                                    {editedCar.car_brand}
-                                  </Typography>
-                                </Grid>
-                                <Grid item xs={6}>
-                                  <Typography variant="body2" color="text.secondary">
-                                    ຮຸ່ນ
-                                  </Typography>
-                                  <Typography variant="body1" fontWeight="medium">
-                                    {editedCar.model}
-                                  </Typography>
-                                </Grid>
-                                <Grid item xs={12}>
-                                  <Typography variant="body2" color="text.secondary">
-                                    ປ້າຍທະບຽນ
-                                  </Typography>
-                                  <Typography
-                                    variant="body1"
-                                    fontWeight="bold"
-                                    sx={{
-                                      display: 'inline-block',
-                                      bgcolor: '#611463',
-                                      color: 'white',
-                                      px: 1.5,
-                                      py: 0.5,
-                                      borderRadius: 1,
-                                      mt: 0.5
-                                    }}
-                                  >
-                                    {editedCar.license_plate}
-                                  </Typography>
-                                </Grid>
+                                {isEditing ? (
+                                  <>
+                                    <Grid item xs={6}>
+                                      <TextField
+                                        label="ຍີ່ຫໍ້"
+                                        value={editedCar.car_brand}
+                                        onChange={(e) => handleCarFieldChange('car_brand', e.target.value)}
+                                        fullWidth
+                                        margin="normal"
+                                      />
+                                    </Grid>
+                                    <Grid item xs={6}>
+                                      <TextField
+                                        label="ຮຸ່ນ"
+                                        value={editedCar.model}
+                                        onChange={(e) => handleCarFieldChange('model', e.target.value)}
+                                        fullWidth
+                                        margin="normal"
+                                      />
+                                    </Grid>
+                                    <Grid item xs={12}>
+                                      <TextField
+                                        label="ປ້າຍທະບຽນ"
+                                        value={editedCar.license_plate}
+                                        onChange={(e) => handleCarFieldChange('license_plate', e.target.value)}
+                                        fullWidth
+                                        margin="normal"
+                                      />
+                                    </Grid>
+                                  </>
+                                ) : (
+                                  <>
+                                    <Grid item xs={6}>
+                                      <Typography variant="body2" color="text.secondary">
+                                        ຍີ່ຫໍ້
+                                      </Typography>
+                                      <Typography variant="body1" fontWeight="medium">
+                                        {editedCar.car_brand}
+                                      </Typography>
+                                    </Grid>
+                                    <Grid item xs={6}>
+                                      <Typography variant="body2" color="text.secondary">
+                                        ຮຸ່ນ
+                                      </Typography>
+                                      <Typography variant="body1" fontWeight="medium">
+                                        {editedCar.model}
+                                      </Typography>
+                                    </Grid>
+                                    <Grid item xs={12}>
+                                      <Typography variant="body2" color="text.secondary">
+                                        ປ້າຍທະບຽນ
+                                      </Typography>
+                                      <Typography
+                                        variant="body1"
+                                        fontWeight="bold"
+                                        sx={{
+                                          display: 'inline-block',
+                                          bgcolor: '#611463',
+                                          color: 'white',
+                                          px: 1.5,
+                                          py: 0.5,
+                                          borderRadius: 1,
+                                          mt: 0.5
+                                        }}
+                                      >
+                                        {editedCar.license_plate}
+                                      </Typography>
+                                    </Grid>
+                                  </>
+                                )}
                               </Grid>
                             </Box>
                           </Box>
@@ -1355,34 +1539,5 @@ const ServiceProviderCard: React.FC<{
     </Card>
   );
 };
-
-// Define service category interface
-interface ServiceCategory {
-  id: string;
-  title: string;
-  icon: React.ReactNode;
-  categoryType: string;
-}
-
-// Define ServiceProvider interface
-interface ServiceProvider {
-  id: number;
-  first_name: string;
-  last_name: string;
-  email: string;
-  tel: string;
-  password?: string;
-  address: string;
-  gender?: string;
-  cv: string;
-  avatar: string;
-  cat_id: number;
-  cat_name?: string;
-  price: number;
-  status: string;
-  city?: string;
-  categoryType: string;
-  car?: CarModel;
-}
 
 export default ServiceProviderAdmin;

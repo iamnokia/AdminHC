@@ -55,7 +55,261 @@ const useMainController = () => {
     }
   };
 
-  // Combine employee and car data
+  // Convert image file to base64
+  const convertImageToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = (error) => reject(error);
+    });
+  };
+
+  // Update employee with optional image
+  const handleUpdateEmployee = async (id: number, employeeData: any, imageFile?: File): Promise<void> => {
+    try {
+      setLoading(true);
+      
+      let dataToUpdate = { ...employeeData };
+      
+      // Handle different approaches for image upload
+      if (imageFile) {
+        // First approach: Try with FormData (multipart/form-data)
+        try {
+          const formData = new FormData();
+          
+          // Add all text fields
+          Object.keys(dataToUpdate).forEach(key => {
+            if (dataToUpdate[key] !== undefined) {
+              formData.append(key, dataToUpdate[key]);
+            }
+          });
+          
+          // Add the image file
+          formData.append('avatar', imageFile);
+          
+          await axios.put(
+            `https://homecare-pro.onrender.com/employees/update_employees/${id}`,
+            formData,
+            {
+              headers: {
+                'Content-Type': 'multipart/form-data'
+              }
+            }
+          );
+          
+          console.log("Image uploaded successfully via FormData");
+        } catch (formDataError) {
+          console.log("FormData approach failed, trying JSON with base64...");
+          
+          // Second approach: Convert image to base64 and send as JSON
+          try {
+            const base64Image = await convertImageToBase64(imageFile);
+            dataToUpdate.avatar = base64Image;
+            
+            await axios.put(
+              `https://homecare-pro.onrender.com/employees/update_employees/${id}`,
+              dataToUpdate,
+              {
+                headers: {
+                  'Content-Type': 'application/json'
+                }
+              }
+            );
+            
+            console.log("Image uploaded successfully via JSON with base64");
+          } catch (jsonError) {
+            console.error("Both image upload approaches failed:", {
+              formDataError,
+              jsonError
+            });
+            
+            // Fall back to updating without image
+            const { avatar, ...dataWithoutImage } = dataToUpdate;
+            
+            await axios.put(
+              `https://homecare-pro.onrender.com/employees/update_employees/${id}`,
+              dataWithoutImage,
+              {
+                headers: {
+                  'Content-Type': 'application/json'
+                }
+              }
+            );
+            
+            console.log("Updated without image - manual image upload required");
+          }
+        }
+      } else {
+        // No image to upload, just update data
+        await axios.put(
+          `https://homecare-pro.onrender.com/employees/update_employees/${id}`,
+          dataToUpdate,
+          {
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          }
+        );
+      }
+
+      // Refresh data after update
+      await handleGetAllData();
+    } catch (error) {
+      console.error("Error updating employee:", error);
+      setError("Failed to update employee");
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Update car details
+  const handleUpdateCar = async (id: number, carData: any, imageFile?: File): Promise<void> => {
+    try {
+      setLoading(true);
+      
+      // Handle different approaches for car image upload
+      if (imageFile) {
+        // First approach: Try with FormData (multipart/form-data)
+        try {
+          const formData = new FormData();
+          
+          // Add all text fields
+          Object.keys(carData).forEach(key => {
+            if (carData[key] !== undefined) {
+              formData.append(key, carData[key]);
+            }
+          });
+          
+          // Add the image file
+          formData.append('car_image', imageFile);
+          
+          await axios.put(
+            `https://homecare-pro.onrender.com/emp_car/update_emp_car/${id}`,
+            formData,
+            {
+              headers: {
+                'Content-Type': 'multipart/form-data'
+              }
+            }
+          );
+          
+          console.log("Car image uploaded successfully via FormData");
+        } catch (formDataError) {
+          console.log("FormData approach failed, trying JSON with base64...");
+          
+          // Second approach: Convert image to base64 and send as JSON
+          try {
+            const base64Image = await convertImageToBase64(imageFile);
+            carData.car_image = base64Image;
+            
+            await axios.put(
+              `https://homecare-pro.onrender.com/emp_car/update_emp_car/${id}`,
+              carData,
+              {
+                headers: {
+                  'Content-Type': 'application/json'
+                }
+              }
+            );
+            
+            console.log("Car image uploaded successfully via JSON with base64");
+          } catch (jsonError) {
+            console.error("Both car image upload approaches failed:", {
+              formDataError,
+              jsonError
+            });
+            
+            // Fall back to updating without image
+            const { car_image, ...dataWithoutImage } = carData;
+            
+            await axios.put(
+              `https://homecare-pro.onrender.com/emp_car/update_emp_car/${id}`,
+              dataWithoutImage,
+              {
+                headers: {
+                  'Content-Type': 'application/json'
+                }
+              }
+            );
+            
+            console.log("Updated car without image - manual image upload required");
+          }
+        }
+      } else {
+        // No image to upload, just update data
+        await axios.put(
+          `https://homecare-pro.onrender.com/emp_car/update_emp_car/${id}`,
+          carData,
+          {
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          }
+        );
+      }
+
+      // Refresh data after update
+      await handleGetCarByCatId();
+    } catch (error) {
+      console.error("Error updating car:", error);
+      setError("Failed to update car");
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Update status function
+  const handleUpdateStatus = async (id: number, status: 'active' | 'inactive'): Promise<void> => {
+    try {
+      setLoading(true);
+      await axios.put(
+        `https://homecare-pro.onrender.com/employees/update_employees/${id}`,
+        { status },
+        {
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+      
+      // Refresh data after update
+      await handleGetAllData();
+    } catch (error) {
+      console.error("Error updating status:", error);
+      setError("Failed to update status");
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Delete employee function
+  const handleDeleteEmployee = async (id: number): Promise<void> => {
+    try {
+      setLoading(true);
+      await axios.delete(
+        `https://homecare-pro.onrender.com/employees/delete_employees/${id}`,
+        {
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+      
+      // Refresh data after deletion
+      await handleGetAllData();
+    } catch (error) {
+      console.error("Error deleting employee:", error);
+      setError("Failed to delete employee");
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const getCombinedData = (): ServiceProvider[] => {
     return data.map(employee => {
       const employeeCar = car.find(c => c.emp_id === employee.id);
@@ -67,7 +321,6 @@ const useMainController = () => {
     });
   };
 
-  // Map category name to category type
   const getCategoryType = (catName: string | undefined): string => {
     const normalizedName = (catName || '').toLowerCase();
     
@@ -90,7 +343,12 @@ const useMainController = () => {
     loading,
     error,
     serviceProviders: getCombinedData(),
-    handleNavigate
+    handleNavigate,
+    handleUpdateEmployee,
+    handleUpdateCar,
+    handleUpdateStatus,
+    handleDeleteEmployee,
+    handleGetAllData // To refresh data manually if needed
   };
 };
 

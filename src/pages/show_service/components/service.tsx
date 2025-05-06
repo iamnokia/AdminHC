@@ -8,10 +8,6 @@ import {
   CardContent,
   Chip,
   Button,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   IconButton,
   Paper,
   Tabs,
@@ -22,30 +18,27 @@ import {
   Snackbar,
   Alert,
   TextField,
-  MenuItem
+  InputAdornment
 } from '@mui/material';
 import {
-  Close as CloseIcon,
   Star as StarIcon,
   LocationOn as LocationIcon,
-  Phone as PhoneIcon,
-  Email as EmailIcon,
-  DirectionsCar as CarIcon,
-  HomeRepairService as RepairIcon,
+  Category as CategoryIcon,
+  CleaningServices as RepairIcon,
   ElectricBolt as ElectricalIcon,
   AcUnit as AirconIcon,
   Plumbing as PlumbingIcon,
   LocalShipping as MovingIcon,
   Bathroom as BathroomIcon,
   PestControl as PestIcon,
-  Category as CategoryIcon,
-  Edit as EditIcon,
-  Delete as DeleteIcon,
-  Save as SaveIcon,
-  CameraAlt as CameraAltIcon
+  DirectionsCar as CarIcon,
+  Search as SearchIcon,
+  Clear as ClearIcon
 } from '@mui/icons-material';
 import useMainController from '../controllers/index';
 import { CarModel } from '../../../models/car';
+import axios from 'axios';
+import ServiceProviderDetailDialog from './serviceDialog';
 
 // Available cities for dropdown with English and Lao names
 const cities = [
@@ -58,13 +51,6 @@ const cities = [
   { en: 'HADXAIFONG', lo: 'ຫາດຊາຍຟອງ' }
 ];
 
-// Available genders
-const genders = [
-  { en: 'Male', lo: 'ຊາຍ' },
-  { en: 'Female', lo: 'ຍິງ' },
-  { en: 'Other', lo: 'ອື່ນໆ' }
-];
-
 // Define service category interface
 interface ServiceCategory {
   id: string;
@@ -73,8 +59,16 @@ interface ServiceCategory {
   categoryType: string;
 }
 
+// Define Category interface from API
+export interface Category {
+  id: number;
+  name: string;
+  des?: string;
+  image?: string;
+}
+
 // Define ServiceProvider interface
-interface ServiceProvider {
+export interface ServiceProvider {
   id: number;
   first_name: string;
   last_name: string;
@@ -95,27 +89,20 @@ interface ServiceProvider {
 }
 
 // Helper function to translate English city names to Lao for display
-const displayCityInLao = (englishCity: string | undefined): string => {
+export const displayCityInLao = (englishCity: string | undefined): string => {
   if (!englishCity) return '';
   const cityObj = cities.find(c => c.en === englishCity);
   return cityObj ? cityObj.lo : englishCity;
 };
 
-// Helper function to translate English gender values to Lao for display
-const displayGenderInLao = (englishGender: string | undefined): string => {
-  if (!englishGender) return '';
-  const genderObj = genders.find(g => g.en === englishGender);
-  return genderObj ? genderObj.lo : englishGender;
-};
-
 // Format price with currency
-const formatPrice = (price: string | number): string => {
+export const formatPrice = (price: string | number): string => {
   const numPrice = typeof price === 'string' ? parseFloat(price) : price;
   return numPrice ? `${numPrice.toLocaleString()} LAK` : '0 LAK';
 };
 
 // Get appropriate icon for category
-const getCategoryIcon = (categoryName: string | undefined): React.ReactNode => {
+export const getCategoryIcon = (categoryName: string | undefined): React.ReactNode => {
   const category = (categoryName || '').toLowerCase();
 
   if (category.includes('cleaning')) return <RepairIcon />;
@@ -129,18 +116,27 @@ const getCategoryIcon = (categoryName: string | undefined): React.ReactNode => {
   return <CategoryIcon />;
 };
 
+// Get category type from name for filtering
+export const getCategoryTypeFromName = (catName: string | undefined): string => {
+  const normalizedName = (catName || '').toLowerCase();
+  
+  if (normalizedName.includes('cleaning') || normalizedName.includes('ທຳຄວາມສະອາດ')) return 'cleaning';
+  if (normalizedName.includes('electrical') || normalizedName.includes('ໄຟຟ້າ')) return 'electrical';
+  if (normalizedName.includes('aircon') || normalizedName.includes('air') || normalizedName.includes('ແອ')) return 'aircon';
+  if (normalizedName.includes('plumbing') || normalizedName.includes('ປະປາ')) return 'plumbing';
+  if (normalizedName.includes('moving') || normalizedName.includes('ຂົນສົ່ງ')) return 'moving';
+  if (normalizedName.includes('bathroom') || normalizedName.includes('ຫ້ອງນ້ຳ')) return 'bathroom';
+  if (normalizedName.includes('pest') || normalizedName.includes('ກຳຈັດແມງໄມ້')) return 'pest';
+  return 'other';
+};
+
 // Main Service Provider Management Component
 const ServiceProviderAdmin: React.FC = () => {
   const [activeTab, setActiveTab] = useState<string>('all');
   const [selectedProvider, setSelectedProvider] = useState<ServiceProvider | null>(null);
   const [dialogOpen, setDialogOpen] = useState<boolean>(false);
-  const [isEditing, setIsEditing] = useState<boolean>(false);
-  const [editedProvider, setEditedProvider] = useState<ServiceProvider | null>(null);
-  const [editedCar, setEditedCar] = useState<CarModel | null>(null);
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [carImageFile, setCarImageFile] = useState<File | null>(null);
-  const [carImagePreview, setCarImagePreview] = useState<string | null>(null);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [searchQuery, setSearchQuery] = useState<string>('');
   const [snackbar, setSnackbar] = useState<{
     open: boolean;
     message: string;
@@ -159,10 +155,49 @@ const ServiceProviderAdmin: React.FC = () => {
     handleUpdateEmployee,
     handleUpdateCar,
     handleUpdateStatus,
-    handleDeleteEmployee
+    handleDeleteEmployee,
   } = useMainController();
 
-  // Define service categories
+  // Handle search input change
+  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(event.target.value);
+  };
+
+  // Clear search
+  const handleClearSearch = () => {
+    setSearchQuery('');
+  };
+
+  // Fetch categories from API
+  const fetchCategories = async (): Promise<void> => {
+    try {
+      console.log("Fetching categories...");
+      const res = await axios.get(
+        "https://homecare-pro.onrender.com/categories/read_categories",
+        {
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+      console.log("Categories fetched:", res.data);
+      setCategories(res.data);
+    } catch (error) {
+      console.error("Error fetching categories:", error);
+      setSnackbar({
+        open: true,
+        message: "ບໍ່ສາມາດດຶງຂໍ້ມູນປະເພດບໍລິການໄດ້",
+        severity: "error"
+      });
+    }
+  };
+  
+  // Load categories when component mounts
+  useEffect(() => {
+    fetchCategories();
+  }, []);
+
+  // Define service categories for tabs
   const serviceCategories: ServiceCategory[] = [
     {
       id: 'all',
@@ -222,152 +257,12 @@ const ServiceProviderAdmin: React.FC = () => {
   // View provider details
   const handleViewDetails = (provider: ServiceProvider) => {
     setSelectedProvider(provider);
-    setEditedProvider({ ...provider });
-    if (provider.car) {
-      setEditedCar({ ...provider.car });
-    } else {
-      setEditedCar(null);
-    }
-    setImageFile(null);
-    setImagePreview(null);
-    setCarImageFile(null);
-    setCarImagePreview(null);
     setDialogOpen(true);
   };
 
   // Close detail dialog
   const handleCloseDialog = () => {
     setDialogOpen(false);
-    setIsEditing(false);
-    setImageFile(null);
-    setImagePreview(null);
-    setCarImageFile(null);
-    setCarImagePreview(null);
-  };
-
-  // Toggle edit mode
-  const handleEditClick = () => {
-    setIsEditing(true);
-  };
-
-  // Cancel editing
-  const handleCancelEdit = () => {
-    if (selectedProvider) {
-      setEditedProvider({ ...selectedProvider });
-      if (selectedProvider.car) {
-        setEditedCar({ ...selectedProvider.car });
-      }
-    }
-    setImageFile(null);
-    setImagePreview(null);
-    setCarImageFile(null);
-    setCarImagePreview(null);
-    setIsEditing(false);
-  };
-
-  // Handle field change in edit mode
-  const handleFieldChange = (field: keyof ServiceProvider, value: any) => {
-    if (editedProvider) {
-      setEditedProvider({
-        ...editedProvider,
-        [field]: value
-      });
-    }
-  };
-
-  // Handle car field change in edit mode
-  const handleCarFieldChange = (field: keyof CarModel, value: any) => {
-    if (editedCar) {
-      setEditedCar({
-        ...editedCar,
-        [field]: value
-      });
-    }
-  };
-
-  // Handle image selection
-  const handleImageSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      setImageFile(file);
-      
-      // Create preview
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  // Handle car image selection
-  const handleCarImageSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      setCarImageFile(file);
-      
-      // Create preview
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setCarImagePreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  // Save provider using controller
-  const handleSaveProvider = async () => {
-    try {
-      if (!editedProvider) return;
-
-      const dataToUpdate = {
-        id: editedProvider.id,
-        first_name: editedProvider.first_name,
-        last_name: editedProvider.last_name,
-        email: editedProvider.email,
-        tel: editedProvider.tel,
-        password: editedProvider.password,
-        address: editedProvider.address,
-        gender: editedProvider.gender,
-        cv: editedProvider.cv,
-        cat_id: editedProvider.cat_id,
-        price: editedProvider.price,
-        status: editedProvider.status,
-        city: editedProvider.city
-      };
-
-      // Call controller function with optional image file
-      await handleUpdateEmployee(editedProvider.id, dataToUpdate, imageFile || undefined);
-
-      // If car exists, update it too
-      if (editedCar && editedProvider.cat_id === 5) {
-        await handleUpdateCar(editedCar.id, {
-          car_brand: editedCar.car_brand,
-          model: editedCar.model,
-          license_plate: editedCar.license_plate
-        }, carImageFile || undefined);
-      }
-
-      setIsEditing(false);
-      setImageFile(null);
-      setImagePreview(null);
-      setCarImageFile(null);
-      setCarImagePreview(null);
-      setDialogOpen(false);
-
-      setSnackbar({
-        open: true,
-        message: "ການແກ້ຂໍ້ມູນຜູ້ໃຫ້ບໍລິການສຳເລັດ",
-        severity: "success"
-      });
-    } catch (error) {
-      console.error("Error saving provider:", error);
-      setSnackbar({
-        open: true,
-        message: "ການແກ້ໄຂຂໍ້ມູນຜູ້ໃຫ້ບໍລິການລົ້ມເຫຼວ",
-        severity: "error"
-      });
-    }
   };
 
   // Handle status change using controller
@@ -414,10 +309,49 @@ const ServiceProviderAdmin: React.FC = () => {
     setSnackbar(prev => ({ ...prev, open: false }));
   };
 
-  // Filter providers based on active category
+  // Filter providers based on active category and search query
   const getFilteredProviders = () => {
-    if (activeTab === 'all') return serviceProviders;
-    return serviceProviders.filter(provider => provider.categoryType === activeTab);
+    let filtered = serviceProviders;
+    
+    // Filter by category
+    if (activeTab !== 'all') {
+      filtered = filtered.filter(provider => provider.categoryType === activeTab);
+    }
+    
+    // Filter by search query
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase().trim();
+      filtered = filtered.filter(provider => 
+        // Search by name
+        `${provider.first_name} ${provider.last_name}`.toLowerCase().includes(query) ||
+        // Search by category
+        (provider.cat_name && provider.cat_name.toLowerCase().includes(query)) ||
+        // Search by city
+        (provider.city && displayCityInLao(provider.city).toLowerCase().includes(query)) ||
+        // Search by address
+        (provider.address && provider.address.toLowerCase().includes(query)) ||
+        // Search by price
+        (provider.price && provider.price.toString().includes(query)) ||
+        // Search by status
+        (provider.status && provider.status.toLowerCase().includes(query)) ||
+        // Search by car details (if available)
+        (provider.car && provider.car.car_brand && provider.car.car_brand.toLowerCase().includes(query)) ||
+        (provider.car && provider.car.model && provider.car.model.toLowerCase().includes(query)) ||
+        (provider.car && provider.car.license_plate && provider.car.license_plate.toLowerCase().includes(query))
+      );
+    }
+    
+    return filtered;
+  };
+
+  // Handle successful update
+  const handleSuccessfulUpdate = (message: string) => {
+    setSnackbar({
+      open: true,
+      message,
+      severity: "success"
+    });
+    setDialogOpen(false);
   };
 
   const filteredProviders = getFilteredProviders();
@@ -427,13 +361,15 @@ const ServiceProviderAdmin: React.FC = () => {
   const movingProviders = serviceProviders.filter(p => p.cat_id === 5).length;
   const activeProviders = serviceProviders.filter(p => p.status === 'active').length;
 
+  console.log("Current categories:", categories); // Debug categories
+  
   return (
     <Box sx={{
       bgcolor: '#f9f9f9',
       minHeight: '100%',
       position: 'relative',
-      marginLeft: '240px', // Add margin to avoid blocking left sidebar
-      width: 'calc(100% - 240px)' // Adjust width to fit the available space
+      marginLeft: '240px',
+      width: 'calc(100% - 240px)'
     }}>
       {/* Category Tabs */}
       <Tabs
@@ -449,7 +385,7 @@ const ServiceProviderAdmin: React.FC = () => {
             minHeight: 48,
             py: 1
           },
-          '& .Mui-selected': { color: 'white' },
+          '& .Mui-selected': { color: '#f7931e' },
           '& .MuiTabs-indicator': { bgcolor: '#f7931e' }
         }}
       >
@@ -466,6 +402,144 @@ const ServiceProviderAdmin: React.FC = () => {
           />
         ))}
       </Tabs>
+      
+      {/* Search Box - Modern Design */}
+      <Box sx={{ 
+        my: 3, 
+        px: { xs: 20, md: 3 },
+        display: 'flex',
+        justifyContent: 'center'
+      }}>
+        <Box sx={{
+          maxWidth: '600px',
+          width: '100%',
+          position: 'relative',
+          '&::before': {
+            content: '""',
+            position: 'absolute',
+            top: -15,
+            left: -15,
+            right: -15,
+            bottom: -15,
+            borderRadius: '50px',
+            background: 'linear-gradient(135deg, rgba(97, 20, 99, 0.1), rgba(247, 147, 30, 0.1))',
+            filter: 'blur(20px)',
+            opacity: 0.6,
+            zIndex: 0,
+          }
+        }}>
+          <TextField
+            fullWidth
+            variant="outlined"
+            placeholder="ຄົ້ນຫາ..."
+            value={searchQuery}
+            onChange={handleSearchChange}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <Box sx={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: '12px',
+                    background: 'linear-gradient(135deg, #611463, #f7931e)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    mr: 1.5,
+                    boxShadow: '0 4px 15px rgba(97, 20, 99, 0.3)',
+                  }}>
+                    <SearchIcon sx={{ color: '#fff', fontSize: '1.4rem' }} />
+                  </Box>
+                </InputAdornment>
+              ),
+              endAdornment: searchQuery && (
+                <InputAdornment position="end">
+                  <Box
+                    onClick={handleClearSearch}
+                    sx={{ 
+                      width: 36,
+                      height: 36,
+                      borderRadius: '50%',
+                      background: 'rgba(97, 20, 99, 0.1)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      cursor: 'pointer',
+                      transition: 'all 0.3s ease',
+                      '&:hover': { 
+                        background: '#611463',
+                        transform: 'scale(1.1)',
+                        '& .MuiSvgIcon-root': {
+                          color: '#fff'
+                        }
+                      }
+                    }}
+                  >
+                    <ClearIcon sx={{ color: '#611463', fontSize: '1.2rem', transition: 'color 0.3s ease' }} />
+                  </Box>
+                </InputAdornment>
+              ),
+            }}
+            sx={{
+              position: 'relative',
+              zIndex: 1,
+              '& .MuiOutlinedInput-root': {
+                borderRadius: '30px',
+                background: 'linear-gradient(to right, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.9))',
+                backdropFilter: 'blur(10px)',
+                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.06), inset 0 2px 4px rgba(97, 20, 99, 0.08)',
+                height: '60px',
+                '& fieldset': {
+                  border: '1px solid rgba(97, 20, 99, 0.1)',
+                  transition: 'all 0.3s ease',
+                },
+                '&:hover fieldset': {
+                  borderColor: '#f7931e',
+                  boxShadow: '0 0 0 1px rgba(247, 147, 30, 0.3)',
+                },
+                '&.Mui-focused fieldset': {
+                  borderColor: '#611463',
+                  borderWidth: '2px',
+                  boxShadow: '0 0 0 3px rgba(97, 20, 99, 0.15)',
+                },
+              },
+              '& .MuiInputBase-input': {
+                padding: '12px 10px',
+                fontSize: '1.1rem',
+                color: '#611463',
+                fontWeight: 500,
+                '&::placeholder': {
+                  opacity: 0.7,
+                  color: '#611463',
+                  fontWeight: 400,
+                  fontSize: '1rem',
+                },
+              },
+            }}
+          />
+          
+          {/* Search helper text */}
+          <Typography
+            variant="body2"
+            sx={{
+              position: 'absolute',
+              bottom: '-24px',
+              left: '20px',
+              color: 'rgba(97, 20, 99, 0.6)',
+              fontSize: '0.9rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1,
+              '&::before': {
+                content: '"✨"',
+                fontSize: '0.8rem',
+              }
+            }}
+          >
+            ຄົ້ນຫາຕາມຊື່, ປະເພດບໍລິການ, ທີ່ຢູ່, ແລະອື່ນໆ...
+          </Typography>
+        </Box>
+      </Box>
 
       <Box sx={{ p: 2 }}>
         {/* Stats Section */}
@@ -621,7 +695,7 @@ const ServiceProviderAdmin: React.FC = () => {
               </Box>
               <Box>
                 <Typography variant="h5" fontWeight="bold" color="#2196F3">
-                  {serviceCategories.length - 1}
+                  {categories.length}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
                   ໝວດໝູ່ການບໍລິການ
@@ -631,7 +705,7 @@ const ServiceProviderAdmin: React.FC = () => {
           </Grid>
         </Grid>
 
-        {/* Current Category Title */}
+        {/* Current Category Title with Search Results */}
         <Box
           sx={{
             display: 'flex',
@@ -651,9 +725,11 @@ const ServiceProviderAdmin: React.FC = () => {
               fontWeight: 'bold'
             }}
           >
-            {activeTab === 'all' ?
-              'ຜູ້ໃຫ້ບໍລິການທັງໝົດ' :
-              `${serviceCategories.find(cat => cat.id === activeTab)?.title} `
+            {searchQuery ? 
+              `ຜົນຄົ້ນຫາສຳລັບ "${searchQuery}"` : 
+              activeTab === 'all' ?
+                'ຜູ້ໃຫ້ບໍລິການທັງໝົດ' :
+                `${serviceCategories.find(cat => cat.id === activeTab)?.title} `
             }
           </Typography>
 
@@ -723,7 +799,10 @@ const ServiceProviderAdmin: React.FC = () => {
                   }}
                 >
                   <Typography variant="h6" color="text.secondary" gutterBottom>
-                    ບໍ່ມີຜູ້ໃຫ້ບໍລິການໃນໝວດໝູ່ການບໍລິການນີ້
+                    {searchQuery ? 
+                      `ບໍ່ພົບຜົນຄົ້ນຫາສຳລັບ "${searchQuery}"` : 
+                      'ບໍ່ມີຜູ້ໃຫ້ບໍລິການໃນໝວດໝູ່ການບໍລິການນີ້'
+                    }
                   </Typography>
                   <Button
                     variant="contained"
@@ -734,7 +813,10 @@ const ServiceProviderAdmin: React.FC = () => {
                         bgcolor: '#4e1050'
                       }
                     }}
-                    onClick={() => setActiveTab('all')}
+                    onClick={() => {
+                      setActiveTab('all');
+                      setSearchQuery('');
+                    }}
                   >
                     ເບິ່ງຜູ້ໃຫ້ບໍລິການທັງໝົດ
                   </Button>
@@ -745,543 +827,19 @@ const ServiceProviderAdmin: React.FC = () => {
         )}
       </Box>
 
-      {/* Detail Dialog */}
+      {/* Detail Dialog - Now a separate component */}
       {selectedProvider && (
-        <Dialog
+        <ServiceProviderDetailDialog
           open={dialogOpen}
+          provider={selectedProvider}
+          categories={categories} // Pass categories here
           onClose={handleCloseDialog}
-          maxWidth="md"
-          fullWidth
-        >
-          <DialogTitle
-            sx={{
-              bgcolor: '#611463',
-              color: 'white',
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center'
-            }}
-          >
-            <Box display="flex" alignItems="center" gap={1}>
-              {getCategoryIcon(selectedProvider.cat_name)}
-              <Typography variant="h6">
-                ຂໍ້ມູນການໃຫ້ບໍລິການຂອງ {selectedProvider.cat_name}
-              </Typography>
-            </Box>
-            <Box>
-              {isEditing ? (
-                <>
-                  <Button
-                    variant="contained"
-                    color="error"
-                    size="small"
-                    onClick={handleCancelEdit}
-                    sx={{ mr: 1 }}
-                  >
-                    ຍົກເລີກ
-                  </Button>
-                  <Button
-                    variant="contained"
-                    color="success"
-                    size="small"
-                    onClick={handleSaveProvider}
-                    startIcon={<SaveIcon />}
-                  >
-                    ບັນທຶກ
-                  </Button>
-                </>
-              ) : (
-                <>
-                  <IconButton
-                    edge="end"
-                    color="inherit"
-                    onClick={handleEditClick}
-                    aria-label="edit"
-                    sx={{ mr: 1 }}
-                  >
-                    <EditIcon />
-                  </IconButton>
-                  <IconButton
-                    edge="end"
-                    color="inherit"
-                    onClick={() => handleDeleteProviderAction(selectedProvider.id)}
-                    aria-label="delete"
-                    sx={{ mr: 1 }}
-                  >
-                    <DeleteIcon />
-                  </IconButton>
-                </>
-              )}
-              <IconButton
-                edge="end"
-                color="inherit"
-                onClick={handleCloseDialog}
-                aria-label="close"
-              >
-                <CloseIcon />
-              </IconButton>
-            </Box>
-          </DialogTitle>
-          {editedProvider && (
-            <DialogContent sx={{ p: 0 }}>
-              <Grid container>
-                {/* Service Provider Info */}
-                <Grid item xs={12} md={6}>
-                  <Box sx={{ p: 3 }}>
-                    <Box
-                      display="flex"
-                      flexDirection="column"
-                      alignItems="center"
-                      mb={3}
-                    >
-                      {/* Avatar with edit capability */}
-                      <Box sx={{ position: 'relative', mb: 2 }}>
-                        <Box
-                          component="img"
-                          src={imagePreview || editedProvider.avatar}
-                          sx={{
-                            width: 120,
-                            height: 120,
-                            borderRadius: '50%',
-                            border: '4px solid',
-                            borderColor: '#f7931e',
-                            objectFit: 'cover'
-                          }}
-                          alt={`${editedProvider.first_name} ${editedProvider.last_name}`}
-                        />
-                        
-                        {isEditing && (
-                          <IconButton
-                            sx={{
-                              position: 'absolute',
-                              bottom: 0,
-                              right: 0,
-                              bgcolor: '#611463',
-                              color: 'white',
-                              '&:hover': { bgcolor: '#4e1050' },
-                              padding: '8px',
-                              borderRadius: '50%',
-                              border: '2px solid white'
-                            }}
-                            component="label"
-                          >
-                            <CameraAltIcon fontSize="small" />
-                            <input
-                              hidden
-                              accept="image/*"
-                              type="file"
-                              onChange={handleImageSelect}
-                            />
-                          </IconButton>
-                        )}
-                      </Box>
-                      
-                      {isEditing ? (<>
-                          <TextField
-                            label="ຊື່"
-                            value={editedProvider.first_name}
-                            onChange={(e) => handleFieldChange('first_name', e.target.value)}
-                            fullWidth
-                            margin="normal"
-                          />
-                          <TextField
-                            label="ນາມສະກຸນ"
-                            value={editedProvider.last_name}
-                            onChange={(e) => handleFieldChange('last_name', e.target.value)}
-                            fullWidth
-                            margin="normal"
-                          />
-                        </>
-                      ) : (
-                        <Typography variant="h5" fontWeight="bold">
-                          {editedProvider.first_name} {editedProvider.last_name}
-                        </Typography>
-                      )}
-                      <Box display="flex" alignItems="center" mt={1}>
-                        <Chip
-                          icon={getCategoryIcon(editedProvider.cat_name) as React.ReactElement}
-                          label={editedProvider.cat_name}
-                          sx={{
-                            bgcolor: alpha('#611463', 0.1),
-                            color: '#611463',
-                            fontWeight: 'bold'
-                          }}
-                        />
-                        <Box
-                          sx={{
-                            display: 'flex',
-                            ml: 1,
-                            color: '#f7931e'
-                          }}
-                        >
-                          {[1, 2, 3, 4, 5].map((star) => (
-                            <StarIcon key={star} fontSize="small" />
-                          ))}
-                        </Box>
-                      </Box>
-                    </Box>
-
-                    {/* Status */}
-                    <Paper
-                      elevation={0}
-                      sx={{
-                        p: 2,
-                        mb: 2,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        border: '1px solid',
-                        borderColor: editedProvider.status === 'active' ? alpha('#4caf50', 0.3) : alpha('#f44336', 0.3),
-                        bgcolor: editedProvider.status === 'active' ? alpha('#4caf50', 0.05) : alpha('#f44336', 0.05),
-                        borderRadius: 1
-                      }}
-                    >
-                      <Box>
-                        <Typography fontWeight="medium">
-                          ສະຖານະ
-                        </Typography>
-                        <Typography variant="body2" color={editedProvider.status === 'active' ? 'success.main' : 'error.main'}>
-                          {editedProvider.status === 'active' ? 'Available for service' : 'Not available'}
-                        </Typography>
-                      </Box>
-                      <Switch
-                        checked={editedProvider.status === 'active'}
-                        onChange={(e) => {
-                          const newStatus = e.target.checked ? 'active' : 'inactive';
-                          handleFieldChange('status', newStatus);
-                          handleProviderStatusChange(editedProvider.id, newStatus);
-                        }}
-                        color={editedProvider.status === 'active' ? 'success' : 'error'}
-                        disabled={isEditing}
-                      />
-                    </Paper>
-
-                    {/* General Info */}
-                    <Box>
-                      <Typography variant="h6" color="#611463" fontWeight="bold">
-                        ຂໍ້ມູນທົ່ວໄປ
-                      </Typography>
-
-                      {isEditing ? (
-                        <>
-                          <TextField
-                            label="ອີເມລ"
-                            value={editedProvider.email}
-                            onChange={(e) => handleFieldChange('email', e.target.value)}
-                            fullWidth
-                            margin="normal"
-                          />
-                          <TextField
-                            label="ເບີໂທລະສັບ"
-                            value={editedProvider.tel}
-                            onChange={(e) => handleFieldChange('tel', e.target.value)}
-                            fullWidth
-                            margin="normal"
-                          />
-                          <TextField
-                            label="ທີ່ຢູ່"
-                            value={editedProvider.address}
-                            onChange={(e) => handleFieldChange('address', e.target.value)}
-                            fullWidth
-                            margin="normal"
-                            multiline
-                            rows={2}
-                          />
-                        </>
-                      ) : (
-                        <>
-                          <Box display="flex" alignItems="center" mt={2}>
-                            <LocationIcon sx={{ color: '#611463', mr: 1 }} />
-                            <Typography>
-                              {editedProvider.address}
-                            </Typography>
-                          </Box>
-
-                          <Box display="flex" alignItems="center" mt={1}>
-                            <PhoneIcon sx={{ color: '#611463', mr: 1 }} />
-                            <Typography>
-                              {editedProvider.tel}
-                            </Typography>
-                          </Box>
-
-                          <Box display="flex" alignItems="center" mt={1}>
-                            <EmailIcon sx={{ color: '#611463', mr: 1 }} />
-                            <Typography>
-                              {editedProvider.email}
-                            </Typography>
-                          </Box>
-                        </>
-                      )}
-                    </Box>
-
-                    <Box sx={{ mt: 3 }}>
-                      <Typography variant="h6" color="#611463" fontWeight="bold">
-                        ເມືອງ
-                      </Typography>
-                      {isEditing ? (
-                        <TextField
-                          select
-                          value={editedProvider.city || ''}
-                          onChange={(e) => handleFieldChange('city', e.target.value)}
-                          fullWidth
-                          margin="normal"
-                        >
-                          {cities.map((city) => (
-                            <MenuItem key={city.en} value={city.en}>
-                              {city.lo}
-                            </MenuItem>
-                          ))}
-                        </TextField>
-                      ) : (
-                        <Typography mt={1}>
-                          {displayCityInLao(editedProvider.city)}
-                        </Typography>
-                      )}
-                    </Box>
-
-                    <Box sx={{ mt: 3 }}>
-                      <Typography variant="h6" color="`#611463`" fontWeight="bold">
-                        ເພດ
-                      </Typography>
-                      {isEditing ? (
-                        <TextField
-                          select
-                          value={editedProvider.gender || ''}
-                          onChange={(e) => handleFieldChange('gender', e.target.value)}
-                          fullWidth
-                          margin="normal"
-                        >
-                          {genders.map((gender) => (
-                            <MenuItem key={gender.en} value={gender.en}>
-                              {gender.lo}
-                            </MenuItem>
-                          ))}
-                        </TextField>
-                      ) : (
-                        <Typography mt={1}>
-                          {displayGenderInLao(editedProvider.gender)}
-                        </Typography>
-                      )}
-                    </Box>
-
-                    <Box sx={{ mt: 3 }}>
-                      <Typography variant="h6" color="#611463" fontWeight="bold">
-                        ລາຄາ
-                      </Typography>
-                      {isEditing ? (
-                        <TextField
-                          label="ລາຄາ (ກີບ)"
-                          type="number"
-                          value={editedProvider.price}
-                          onChange={(e) => handleFieldChange('price', parseFloat(e.target.value) || 0)}
-                          fullWidth
-                          margin="normal"
-                          InputProps={{
-                            endAdornment: 'ກີບ'
-                          }}
-                        />
-                      ) : (
-                        <Typography
-                          variant="h5"
-                          fontWeight="bold"
-                          color="#f7931e"
-                          mt={1}
-                        >
-                          {formatPrice(editedProvider.price)}
-                        </Typography>
-                      )}
-                    </Box>
-                  </Box>
-                </Grid>
-
-                {/* Right Section */}
-                <Grid item xs={12} md={6} sx={{ bgcolor: alpha('#f7931e', 0.05) }}>
-                  <Box sx={{ p: 3 }}>
-                    <Typography variant="h6" color="#611463" fontWeight="bold">
-                      ລາຍລະອຽດ
-                    </Typography>
-                    {isEditing ? (
-                      <TextField
-                        label="ຄຳອະທິບາຍ"
-                        value={editedProvider.cv}
-                        onChange={(e) => handleFieldChange('cv', e.target.value)}
-                        fullWidth
-                        margin="normal"
-                        multiline
-                        rows={4}
-                      />
-                    ) : (
-                      <Typography paragraph mt={1}>
-                        {editedProvider.cv}
-                      </Typography>
-                    )}
-
-                    {editedProvider.cat_id === 5 && editedCar && (
-                      <>
-                        <Box sx={{ mt: 3 }}>
-                          <Typography variant="h6" color="#611463" fontWeight="bold" display="flex" alignItems="center">
-                            <CarIcon sx={{ mr: 1 }} />
-                            ຂໍ້ມູນລົດ
-                          </Typography>
-
-                          <Box
-                            sx={{
-                              mt: 2,
-                              border: '1px solid',
-                              borderColor: alpha('#611463', 0.2),
-                              borderRadius: 2,
-                              overflow: 'hidden'
-                            }}
-                          >
-                            <Box sx={{ position: 'relative' }}>
-                              <Box
-                                component="img"
-                                src={carImagePreview || editedCar.car_image}
-                                alt={`${editedCar.car_brand} ${editedCar.model}`}
-                                sx={{
-                                  width: '100%',
-                                  height: 200,
-                                  objectFit: 'cover'
-                                }}
-                              />
-                              
-                              {isEditing && (
-                                <IconButton
-                                  sx={{
-                                    position: 'absolute',
-                                    top: 8,
-                                    right: 8,
-                                    bgcolor: '#611463',
-                                    color: 'white',
-                                    '&:hover': { bgcolor: '#4e1050' },
-                                    padding: '8px',
-                                    borderRadius: '50%',
-                                    boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
-                                  }}
-                                  component="label"
-                                >
-                                  <CameraAltIcon fontSize="small" />
-                                  <input
-                                    hidden
-                                    accept="image/*"
-                                    type="file"
-                                    onChange={handleCarImageSelect}
-                                  />
-                                </IconButton>
-                              )}
-                            </Box>
-
-                            <Box sx={{ p: 2, bgcolor: 'white' }}>
-                              <Grid container spacing={2}>
-                                {isEditing ? (
-                                  <>
-                                    <Grid item xs={6}>
-                                      <TextField
-                                        label="ຍີ່ຫໍ້"
-                                        value={editedCar.car_brand}
-                                        onChange={(e) => handleCarFieldChange('car_brand', e.target.value)}
-                                        fullWidth
-                                        margin="normal"
-                                      />
-                                    </Grid>
-                                    <Grid item xs={6}>
-                                      <TextField
-                                        label="ຮຸ່ນ"
-                                        value={editedCar.model}
-                                        onChange={(e) => handleCarFieldChange('model', e.target.value)}
-                                        fullWidth
-                                        margin="normal"
-                                      />
-                                    </Grid>
-                                    <Grid item xs={12}>
-                                      <TextField
-                                        label="ປ້າຍທະບຽນ"
-                                        value={editedCar.license_plate}
-                                        onChange={(e) => handleCarFieldChange('license_plate', e.target.value)}
-                                        fullWidth
-                                        margin="normal"
-                                      />
-                                    </Grid>
-                                  </>
-                                ) : (
-                                  <>
-                                    <Grid item xs={6}>
-                                      <Typography variant="body2" color="text.secondary">
-                                        ຍີ່ຫໍ້
-                                      </Typography>
-                                      <Typography variant="body1" fontWeight="medium">
-                                        {editedCar.car_brand}
-                                      </Typography>
-                                    </Grid>
-                                    <Grid item xs={6}>
-                                      <Typography variant="body2" color="text.secondary">
-                                        ຮຸ່ນ
-                                      </Typography>
-                                      <Typography variant="body1" fontWeight="medium">
-                                        {editedCar.model}
-                                      </Typography>
-                                    </Grid>
-                                    <Grid item xs={12}>
-                                      <Typography variant="body2" color="text.secondary">
-                                        ປ້າຍທະບຽນ
-                                      </Typography>
-                                      <Typography
-                                        variant="body1"
-                                        fontWeight="bold"
-                                        sx={{
-                                          display: 'inline-block',
-                                          bgcolor: '#611463',
-                                          color: 'white',
-                                          px: 1.5,
-                                          py: 0.5,
-                                          borderRadius: 1,
-                                          mt: 0.5
-                                        }}
-                                      >
-                                        {editedCar.license_plate}
-                                      </Typography>
-                                    </Grid>
-                                  </>
-                                )}
-                              </Grid>
-                            </Box>
-                          </Box>
-                        </Box>
-                      </>
-                    )}
-                  </Box>
-                </Grid>
-              </Grid>
-            </DialogContent>
-          )}
-          <DialogActions sx={{ bgcolor: '#f5f5f5', px: 3, py: 2 }}>
-            <Button
-              variant="outlined"
-              onClick={handleCloseDialog}
-              sx={{
-                borderColor: '#611463',
-                color: '#611463'
-              }}
-            >
-              ຍົກເລີກ
-            </Button>
-            {!isEditing && (
-              <Button
-                variant="contained"
-                sx={{
-                  bgcolor: '#611463',
-                  '&:hover': {
-                    bgcolor: '#4e1050'
-                  }
-                }}
-                onClick={handleEditClick}
-                startIcon={<EditIcon />}
-              >
-                ແກ້ໄຂຂໍ້ມູນ
-              </Button>
-            )}
-          </DialogActions>
-        </Dialog>
+          onUpdateStatus={handleProviderStatusChange}
+          onUpdateEmployee={handleUpdateEmployee}
+          onUpdateCar={handleUpdateCar}
+          onDeleteEmployee={handleDeleteProviderAction}
+          onSuccess={handleSuccessfulUpdate}
+        />
       )}
 
       {/* Status Change Notification */}
@@ -1470,7 +1028,7 @@ const ServiceProviderCard: React.FC<{
         <Box display="flex" alignItems="center" mt={0.5} mb={1}>
           <LocationIcon sx={{ fontSize: 16, color: '#f7931e', mr: 0.5 }} />
           <Typography variant="body2" color="text.secondary">
-            {provider.city}
+            {displayCityInLao(provider.city)}
           </Typography>
         </Box>
 

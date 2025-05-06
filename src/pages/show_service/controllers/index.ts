@@ -4,17 +4,35 @@ import { EmployeeModel } from "../../../models/employee";
 import axios from "axios";
 import { CarModel } from "../../../models/car";
 
+// Define Category interface
+export interface Category {
+  id: number;
+  name: string;
+  des?: string;
+  image?: string;
+}
+
+// Define ServiceProvider interface (combined model)
+export interface ServiceProvider extends Omit<EmployeeModel, 'price'> {
+  price: number;
+  categoryType: string;
+  car?: CarModel;
+}
+
 const useMainController = () => {
   const [data, setData] = useState<EmployeeModel[]>([]);
   const [car, setCar] = useState<CarModel[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
+  // Navigation helper
   const handleNavigate = (path: string) => {
     navigate(path);
   };
 
+  // Fetch all employees
   const handleGetAllData = async (): Promise<void> => {
     try {
       setLoading(true);
@@ -35,6 +53,7 @@ const useMainController = () => {
     }
   };
 
+  // Fetch cars for moving service providers
   const handleGetCarByCatId = async (): Promise<void> => {
     try {
       setLoading(true);
@@ -50,6 +69,27 @@ const useMainController = () => {
     } catch (error) {
       console.error("Error fetching car data:", error);
       setError("Failed to fetch car data");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch all categories
+  const handleGetCategories = async (): Promise<void> => {
+    try {
+      setLoading(true);
+      const res = await axios.get(
+        "https://homecare-pro.onrender.com/categories/read_categories",
+        {
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+      setCategories(res.data);
+    } catch (error) {
+      console.error("Error fetching categories:", error);
+      setError("Failed to fetch categories");
     } finally {
       setLoading(false);
     }
@@ -81,7 +121,7 @@ const useMainController = () => {
           // Add all text fields
           Object.keys(dataToUpdate).forEach(key => {
             if (dataToUpdate[key] !== undefined) {
-              formData.append(key, dataToUpdate[key]);
+              formData.append(key, dataToUpdate[key].toString());
             }
           });
           
@@ -164,6 +204,57 @@ const useMainController = () => {
     }
   };
 
+  // Create new car for moving service provider
+  const handleCreateCar = async (carData: any, imageFile?: File): Promise<void> => {
+    try {
+      setLoading(true);
+      
+      if (imageFile) {
+        const formData = new FormData();
+        
+        // Add all text fields
+        Object.keys(carData).forEach(key => {
+          if (carData[key] !== undefined) {
+            formData.append(key, carData[key].toString());
+          }
+        });
+        
+        // Add the image file
+        formData.append('car_image', imageFile);
+        
+        await axios.post(
+          `https://homecare-pro.onrender.com/emp_car/create_emp_car`,
+          formData,
+          {
+            headers: {
+              'Content-Type': 'multipart/form-data'
+            }
+          }
+        );
+      } else {
+        // No image to upload
+        await axios.post(
+          `https://homecare-pro.onrender.com/emp_car/create_emp_car`,
+          carData,
+          {
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          }
+        );
+      }
+
+      // Refresh car data after create
+      await handleGetCarByCatId();
+    } catch (error) {
+      console.error("Error creating car:", error);
+      setError("Failed to create car");
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Update car details
   const handleUpdateCar = async (id: number, carData: any, imageFile?: File): Promise<void> => {
     try {
@@ -178,7 +269,7 @@ const useMainController = () => {
           // Add all text fields
           Object.keys(carData).forEach(key => {
             if (carData[key] !== undefined) {
-              formData.append(key, carData[key]);
+              formData.append(key, carData[key].toString());
             }
           });
           
@@ -310,17 +401,7 @@ const useMainController = () => {
     }
   };
 
-  const getCombinedData = (): ServiceProvider[] => {
-    return data.map(employee => {
-      const employeeCar = car.find(c => c.emp_id === employee.id);
-      return {
-        ...employee,
-        categoryType: getCategoryType(employee.cat_name),
-        car: employeeCar
-      };
-    });
-  };
-
+  // Get category type from name for UI display
   const getCategoryType = (catName: string | undefined): string => {
     const normalizedName = (catName || '').toLowerCase();
     
@@ -334,28 +415,39 @@ const useMainController = () => {
     return 'other';
   };
 
+  // Combine employee and car data
+  const getCombinedData = (): ServiceProvider[] => {
+    return data.map(employee => {
+      const employeeCar = car.find(c => c.emp_id === employee.id);
+      return {
+        ...employee,
+        categoryType: getCategoryType(employee.cat_name),
+        car: employeeCar
+      };
+    });
+  };
+
+  // Initialize data on component mount
   useEffect(() => {
     handleGetAllData();
     handleGetCarByCatId();
+    handleGetCategories();
   }, []);
 
   return {
     loading,
     error,
     serviceProviders: getCombinedData(),
+    categories, // Explicitly expose categories to components
     handleNavigate,
     handleUpdateEmployee,
+    handleCreateCar,
     handleUpdateCar,
     handleUpdateStatus,
     handleDeleteEmployee,
-    handleGetAllData // To refresh data manually if needed
+    handleGetAllData,
+    handleGetCategories
   };
 };
 
 export default useMainController;
-
-interface ServiceProvider extends Omit<EmployeeModel, 'price'> {
-  price: number;
-  categoryType: string;
-  car?: CarModel;
-}

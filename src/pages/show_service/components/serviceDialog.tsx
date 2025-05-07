@@ -17,7 +17,8 @@ import {
   FormControl,
   InputLabel,
   Select,
-  Chip
+  Chip,
+  FormHelperText
 } from '@mui/material';
 import {
   Close as CloseIcon,
@@ -34,7 +35,6 @@ import {
 } from '@mui/icons-material';
 import { ServiceProvider, getCategoryIcon, displayCityInLao, formatPrice, getCategoryTypeFromName } from './service';
 import { CarModel } from '../../../models/car';
-import axios from 'axios';
 
 // Available cities for dropdown with English and Lao names
 const cities = [
@@ -99,6 +99,7 @@ const ServiceProviderDetailDialog: React.FC<ServiceProviderDetailDialogProps> = 
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [carImageFile, setCarImageFile] = useState<File | null>(null);
   const [carImagePreview, setCarImagePreview] = useState<string | null>(null);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   // Debug the props
   console.log("Dialog opened with categories:", categories);
@@ -118,6 +119,7 @@ const ServiceProviderDetailDialog: React.FC<ServiceProviderDetailDialogProps> = 
       setCarImageFile(null);
       setCarImagePreview(null);
       setIsEditing(false);
+      setErrors({});
     }
   }, [open, provider]);
 
@@ -129,6 +131,7 @@ const ServiceProviderDetailDialog: React.FC<ServiceProviderDetailDialogProps> = 
     setImagePreview(null);
     setCarImageFile(null);
     setCarImagePreview(null);
+    setErrors({});
   };
 
   // Toggle edit mode
@@ -151,14 +154,58 @@ const ServiceProviderDetailDialog: React.FC<ServiceProviderDetailDialogProps> = 
     setCarImageFile(null);
     setCarImagePreview(null);
     setIsEditing(false);
+    setErrors({});
   };
 
-  // Handle field change in edit mode
+  // Validate form fields
+  const validateField = (field: string, value: any): string | null => {
+    if (!value && field !== 'avatar' && field !== 'car_image') {
+      return 'This field is required';
+    }
+    
+    if (field === 'email' && value && !/\S+@\S+\.\S+/.test(value)) {
+      return 'Please enter a valid email address';
+    }
+    
+    if (field === 'tel' && value && !/^\d{10,12}$/.test(value.toString().replace(/\s/g, ""))) {
+      return 'Please enter a valid phone number';
+    }
+    
+    if (field === 'price' && (isNaN(value) || value <= 0)) {
+      return 'Please enter a valid price';
+    }
+    
+    return null;
+  };
+
+  // Handle field change in edit mode with validation
   const handleFieldChange = (field: keyof ServiceProvider, value: any) => {
     if (editedProvider) {
+      // Validate the field
+      const error = validateField(field, value);
+      if (error) {
+        setErrors(prev => ({ ...prev, [field]: error }));
+      } else {
+        setErrors(prev => {
+          const newErrors = { ...prev };
+          delete newErrors[field];
+          return newErrors;
+        });
+      }
+
       if (field === 'cat_id') {
         // When changing category, also update cat_name and categoryType
-        const selectedCategory = categories.find(cat => cat.id === parseInt(value));
+        const categoryList = [
+          { id: 1, name: "ທຳຄວາມສະອາດ" },
+          { id: 2, name: "ສ້ອມແປງໄຟຟ້າ" },
+          { id: 3, name: "ສ້ອມແປງແອ" },
+          { id: 4, name: "ສ້ອມແປງນ້ຳປະປາ" },
+          { id: 5, name: "ແກ່ເຄື່ອງ" },
+          { id: 6, name: "ດູດສ້ວມ" },
+          { id: 7, name: "ກຳຈັດປວກ" }
+        ];
+        
+        const selectedCategory = categoryList.find(cat => cat.id === parseInt(value.toString()));
         console.log("Selected category:", selectedCategory);
         
         const categoryName = selectedCategory ? selectedCategory.name : '';
@@ -166,13 +213,13 @@ const ServiceProviderDetailDialog: React.FC<ServiceProviderDetailDialogProps> = 
         
         setEditedProvider({
           ...editedProvider,
-          [field]: parseInt(value),
+          [field]: parseInt(value.toString()),
           cat_name: categoryName,
           categoryType: categoryType
         });
         
         // If switching to or from moving service, handle car data
-        if (parseInt(value) === 5 && !editedCar) {
+        if (parseInt(value.toString()) === 5 && !editedCar) {
           // Create empty car data if switching to moving service
           setEditedCar({
             id: 0, // Will be assigned by backend
@@ -182,7 +229,7 @@ const ServiceProviderDetailDialog: React.FC<ServiceProviderDetailDialogProps> = 
             license_plate: '',
             car_image: ''
           });
-        } else if (parseInt(value) !== 5 && editedCar) {
+        } else if (parseInt(value.toString()) !== 5 && editedCar) {
           // Clear car data if switching from moving service
           setEditedCar(null);
         }
@@ -198,6 +245,18 @@ const ServiceProviderDetailDialog: React.FC<ServiceProviderDetailDialogProps> = 
   // Handle car field change in edit mode
   const handleCarFieldChange = (field: keyof CarModel, value: any) => {
     if (editedCar) {
+      // Validate the field
+      const error = validateField(field, value);
+      if (error) {
+        setErrors(prev => ({ ...prev, [field]: error }));
+      } else {
+        setErrors(prev => {
+          const newErrors = { ...prev };
+          delete newErrors[field];
+          return newErrors;
+        });
+      }
+
       setEditedCar({
         ...editedCar,
         [field]: value
@@ -235,10 +294,50 @@ const ServiceProviderDetailDialog: React.FC<ServiceProviderDetailDialogProps> = 
     }
   };
 
+  // Validate form before submission
+  const validateForm = (): boolean => {
+    const newErrors: Record<string, string> = {};
+    const requiredFields = ['first_name', 'last_name', 'email', 'tel', 'address', 'cat_id', 'price', 'city'];
+    
+    if (editedProvider) {
+      requiredFields.forEach(field => {
+        const value = editedProvider[field as keyof ServiceProvider];
+        const error = validateField(field, value);
+        if (error) {
+          newErrors[field] = error;
+        }
+      });
+    }
+    
+    // Validate car fields if it's a moving service
+    if (editedProvider?.cat_id === 5 && editedCar) {
+      ['car_brand', 'model', 'license_plate'].forEach(field => {
+        const value = editedCar[field as keyof CarModel];
+        const error = validateField(field, value);
+        if (error) {
+          newErrors[field] = error;
+        }
+      });
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   // Save provider
   const handleSaveProvider = async () => {
     try {
       if (!editedProvider) return;
+      
+      // Validate form before submission
+      if (!validateForm()) {
+        return;
+      }
+
+      // Convert the price to a number if it's a string
+      const price = typeof editedProvider.price === 'string' 
+        ? parseFloat(editedProvider.price) 
+        : editedProvider.price;
 
       const dataToUpdate = {
         id: editedProvider.id,
@@ -250,57 +349,44 @@ const ServiceProviderDetailDialog: React.FC<ServiceProviderDetailDialogProps> = 
         address: editedProvider.address,
         gender: editedProvider.gender,
         cv: editedProvider.cv,
-        cat_id: editedProvider.cat_id,
-        price: editedProvider.price,
+        cat_id: parseInt(editedProvider.cat_id.toString()), // Ensure it's a number
+        price: price,
         status: editedProvider.status,
         city: editedProvider.city
       };
+
+      console.log("Sending data to update:", dataToUpdate);
 
       // Call controller function with optional image file
       await onUpdateEmployee(editedProvider.id, dataToUpdate, imageFile || undefined);
 
       // If provider is moving service (cat_id 5) and car data exists
-      if (editedProvider.cat_id === 5 && editedCar) {
-        // For new car (id is 0)
+      if (parseInt(editedProvider.cat_id.toString()) === 5 && editedCar) {
+        console.log("Updating car data for moving service provider");
+        
+        // For new car (id is 0) - use handleCreateCar controller method
         if (editedCar.id === 0) {
-          try {
-            const carData = {
-              emp_id: editedProvider.id,
-              car_brand: editedCar.car_brand,
-              model: editedCar.model,
-              license_plate: editedCar.license_plate
-            };
-
-            const formData = new FormData();
-            Object.entries(carData).forEach(([key, value]) => {
-              formData.append(key, value as string);
-            });
-
-            if (carImageFile) {
-              formData.append('car_image', carImageFile);
-            }
-
-            // Create new car
-            await axios.post(
-              'https://homecare-pro.onrender.com/emp_car/create_emp_car',
-              formData,
-              {
-                headers: {
-                  'Content-Type': 'multipart/form-data'
-                }
-              }
-            );
-          } catch (error) {
-            console.error("Error creating car:", error);
-            throw error;
-          }
-        } else {
-          // Update existing car
-          await onUpdateCar(editedCar.id, {
+          console.log("Creating new car for employee ID:", editedProvider.id);
+          const newCarData = {
+            emp_id: editedProvider.id,
             car_brand: editedCar.car_brand,
             model: editedCar.model,
             license_plate: editedCar.license_plate
-          }, carImageFile || undefined);
+          };
+          
+          console.log("New car data:", newCarData);
+          await handleCreateCar(newCarData, carImageFile || undefined);
+        } else {
+          // Update existing car
+          console.log("Updating existing car ID:", editedCar.id);
+          const existingCarData = {
+            car_brand: editedCar.car_brand,
+            model: editedCar.model,
+            license_plate: editedCar.license_plate
+          };
+          
+          console.log("Car update data:", existingCarData);
+          await onUpdateCar(editedCar.id, existingCarData, carImageFile || undefined);
         }
       }
 
@@ -309,11 +395,12 @@ const ServiceProviderDetailDialog: React.FC<ServiceProviderDetailDialogProps> = 
       setImagePreview(null);
       setCarImageFile(null);
       setCarImagePreview(null);
+      setErrors({});
       
       onSuccess("ການແກ້ຂໍ້ມູນຜູ້ໃຫ້ບໍລິການສຳເລັດ");
     } catch (error) {
       console.error("Error saving provider:", error);
-      throw error;
+      setErrors({ general: "Failed to save provider information. Please check console for details." });
     }
   };
 
@@ -407,6 +494,11 @@ const ServiceProviderDetailDialog: React.FC<ServiceProviderDetailDialogProps> = 
         </Box>
       </DialogTitle>
       <DialogContent sx={{ p: 0 }}>
+        {errors.general && (
+          <Box sx={{ p: 2, bgcolor: alpha('#f44336', 0.1) }}>
+            <Typography color="error">{errors.general}</Typography>
+          </Box>
+        )}
         <Grid container>
           {/* Service Provider Info */}
           <Grid item xs={12} md={6}>
@@ -467,6 +559,8 @@ const ServiceProviderDetailDialog: React.FC<ServiceProviderDetailDialogProps> = 
                       onChange={(e) => handleFieldChange('first_name', e.target.value)}
                       fullWidth
                       margin="normal"
+                      error={!!errors.first_name}
+                      helperText={errors.first_name}
                     />
                     <TextField
                       label="ນາມສະກຸນ"
@@ -474,6 +568,8 @@ const ServiceProviderDetailDialog: React.FC<ServiceProviderDetailDialogProps> = 
                       onChange={(e) => handleFieldChange('last_name', e.target.value)}
                       fullWidth
                       margin="normal"
+                      error={!!errors.last_name}
+                      helperText={errors.last_name}
                     />
                   </>
                 ) : (
@@ -547,27 +643,41 @@ const ServiceProviderDetailDialog: React.FC<ServiceProviderDetailDialogProps> = 
                   ປະເພດການບໍລິການ
                 </Typography>
                 {isEditing ? (
-                  <FormControl fullWidth margin="normal">
-                    <InputLabel id="category-select-label">ປະເພດການບໍລິການ</InputLabel>
-                    <Select
-                      labelId="category-select-label"
-                      value={editedProvider.cat_id || ''}
-                      label="ປະເພດການບໍລິການ"
-                      onChange={(e) => handleFieldChange('cat_id', e.target.value)}
-                    >
-                      {categories && categories.length > 0 ? (
-                        categories.map((category) => (
+                  <Box sx={{ position: 'relative' }}>
+                    <FormControl fullWidth margin="normal" error={!!errors.cat_id}>
+                      <InputLabel id="category-select-label">ເລືອກປະເພດການບໍລິການ</InputLabel>
+                      <Select
+                        labelId="category-select-label"
+                        value={editedProvider.cat_id}
+                        label="ເລືອກປະເພດການບໍລິການ"
+                        onChange={(e) => handleFieldChange('cat_id', e.target.value)}
+                        MenuProps={{
+                          PaperProps: {
+                            style: {
+                              maxHeight: 300,
+                              width: 'auto',
+                              zIndex: 9999
+                            },
+                          },
+                        }}
+                      >
+                        {[
+                          { id: 1, name: "ທຳຄວາມສະອາດ" },
+                          { id: 2, name: "ສ້ອມແປງໄຟຟ້າ" },
+                          { id: 3, name: "ສ້ອມແປງແອ" },
+                          { id: 4, name: "ສ້ອມແປງນ້ຳປະປາ" },
+                          { id: 5, name: "ແກ່ເຄື່ອງ" },
+                          { id: 6, name: "ດູດສ້ວມ" },
+                          { id: 7, name: "ກຳຈັດປວກ" }
+                        ].map((category) => (
                           <MenuItem key={category.id} value={category.id}>
                             {category.name}
                           </MenuItem>
-                        ))
-                      ) : (
-                        <MenuItem value={editedProvider.cat_id || ''}>
-                          {editedProvider.cat_name || 'Loading categories...'}
-                        </MenuItem>
-                      )}
-                    </Select>
-                  </FormControl>
+                        ))}
+                      </Select>
+                      {errors.cat_id && <FormHelperText>{errors.cat_id}</FormHelperText>}
+                    </FormControl>
+                  </Box>
                 ) : (
                   <Box display="flex" alignItems="center" mt={1}>
                     {getCategoryIcon(editedProvider.cat_name)}
@@ -592,6 +702,8 @@ const ServiceProviderDetailDialog: React.FC<ServiceProviderDetailDialogProps> = 
                       onChange={(e) => handleFieldChange('email', e.target.value)}
                       fullWidth
                       margin="normal"
+                      error={!!errors.email}
+                      helperText={errors.email}
                     />
                     <TextField
                       label="ເບີໂທລະສັບ"
@@ -599,6 +711,8 @@ const ServiceProviderDetailDialog: React.FC<ServiceProviderDetailDialogProps> = 
                       onChange={(e) => handleFieldChange('tel', e.target.value)}
                       fullWidth
                       margin="normal"
+                      error={!!errors.tel}
+                      helperText={errors.tel}
                     />
                     <TextField
                       label="ທີ່ຢູ່"
@@ -608,6 +722,8 @@ const ServiceProviderDetailDialog: React.FC<ServiceProviderDetailDialogProps> = 
                       margin="normal"
                       multiline
                       rows={2}
+                      error={!!errors.address}
+                      helperText={errors.address}
                     />
                   </>
                 ) : (
@@ -641,19 +757,21 @@ const ServiceProviderDetailDialog: React.FC<ServiceProviderDetailDialogProps> = 
                   ເມືອງ
                 </Typography>
                 {isEditing ? (
-                  <TextField
-                    select
-                    value={editedProvider.city || ''}
-                    onChange={(e) => handleFieldChange('city', e.target.value)}
-                    fullWidth
-                    margin="normal"
-                  >
-                    {cities.map((city) => (
-                      <MenuItem key={city.en} value={city.en}>
-                        {city.lo}
-                      </MenuItem>
-                    ))}
-                  </TextField>
+                  <FormControl fullWidth margin="normal" error={!!errors.city}>
+                    <InputLabel>ເມືອງ</InputLabel>
+                    <Select
+                      value={editedProvider.city || ''}
+                      onChange={(e) => handleFieldChange('city', e.target.value)}
+                      label="ເມືອງ"
+                    >
+                      {cities.map((city) => (
+                        <MenuItem key={city.en} value={city.en}>
+                          {city.lo}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                    {errors.city && <FormHelperText>{errors.city}</FormHelperText>}
+                  </FormControl>
                 ) : (
                   <Typography mt={1}>
                     {displayCityInLao(editedProvider.city)}
@@ -666,19 +784,20 @@ const ServiceProviderDetailDialog: React.FC<ServiceProviderDetailDialogProps> = 
                   ເພດ
                 </Typography>
                 {isEditing ? (
-                  <TextField
-                    select
-                    value={editedProvider.gender || ''}
-                    onChange={(e) => handleFieldChange('gender', e.target.value)}
-                    fullWidth
-                    margin="normal"
-                  >
-                    {genders.map((gender) => (
-                      <MenuItem key={gender.en} value={gender.en}>
-                        {gender.lo}
-                      </MenuItem>
-                    ))}
-                  </TextField>
+                  <FormControl fullWidth margin="normal">
+                    <InputLabel>ເພດ</InputLabel>
+                    <Select
+                      value={editedProvider.gender || ''}
+                      onChange={(e) => handleFieldChange('gender', e.target.value)}
+                      label="ເພດ"
+                    >
+                      {genders.map((gender) => (
+                        <MenuItem key={gender.en} value={gender.en}>
+                          {gender.lo}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
                 ) : (
                   <Typography mt={1}>
                     {displayGenderInLao(editedProvider.gender)}
@@ -701,6 +820,8 @@ const ServiceProviderDetailDialog: React.FC<ServiceProviderDetailDialogProps> = 
                     InputProps={{
                       endAdornment: 'ກີບ'
                     }}
+                    error={!!errors.price}
+                    helperText={errors.price}
                   />
                 ) : (
                   <Typography
@@ -731,10 +852,12 @@ const ServiceProviderDetailDialog: React.FC<ServiceProviderDetailDialogProps> = 
                   margin="normal"
                   multiline
                   rows={4}
+                  error={!!errors.cv}
+                  helperText={errors.cv}
                 />
               ) : (
                 <Typography paragraph mt={1}>
-                  {editedProvider.cv}
+                  {editedProvider.cv || 'ບໍ່ມີລາຍລະອຽດ'}
                 </Typography>
               )}
 
@@ -807,6 +930,8 @@ const ServiceProviderDetailDialog: React.FC<ServiceProviderDetailDialogProps> = 
                                     onChange={(e) => handleCarFieldChange('car_brand', e.target.value)}
                                     fullWidth
                                     margin="normal"
+                                    error={!!errors.car_brand}
+                                    helperText={errors.car_brand}
                                   />
                                 </Grid>
                                 <Grid item xs={6}>
@@ -816,6 +941,8 @@ const ServiceProviderDetailDialog: React.FC<ServiceProviderDetailDialogProps> = 
                                     onChange={(e) => handleCarFieldChange('model', e.target.value)}
                                     fullWidth
                                     margin="normal"
+                                    error={!!errors.model}
+                                    helperText={errors.model}
                                   />
                                 </Grid>
                                 <Grid item xs={12}>
@@ -825,11 +952,21 @@ const ServiceProviderDetailDialog: React.FC<ServiceProviderDetailDialogProps> = 
                                     onChange={(e) => handleCarFieldChange('license_plate', e.target.value)}
                                     fullWidth
                                     margin="normal"
+                                    error={!!errors.license_plate}
+                                    helperText={errors.license_plate}
                                   />
                                 </Grid>
                               </>
                             ) : (
                               <>
+                                <Grid item xs={6}>
+                                  <Typography variant="body2" color="text.secondary">
+                                    ຍີ່ຫໍ້ ແລະ ຮຸ່ນ
+                                  </Typography>
+                                  <Typography variant="body1" fontWeight="medium">
+                                    {editedCar.car_brand} {editedCar.model}
+                                  </Typography>
+                                </Grid>
                                 <Grid item xs={6}>
                                   <Typography variant="body2" color="text.secondary">
                                     ປ້າຍທະບຽນ

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { 
   Box, 
   Typography, 
@@ -10,6 +10,9 @@ import {
   Select,
   MenuItem,
   TextField,
+  Card,
+  CardContent,
+  CircularProgress,
   Divider
 } from '@mui/material';
 import { 
@@ -23,84 +26,134 @@ import {
 import { 
   FilterAlt as FilterIcon,
   FileDownload as DownloadIcon,
-  Print as PrintIcon
+  Print as PrintIcon,
+  TrendingUp as TrendingUpIcon,
+  TrendingDown as TrendingDownIcon,
+  TrendingFlat as TrendingFlatIcon
 } from '@mui/icons-material';
 
-// Sample data for charts
-const feedbackData = [
-  { name: 'Excellent', value: 500 },
-  { name: 'Good', value: 300 },
-  { name: 'Average', value: 200 },
-  { name: 'Poor', value: 80 },
-  { name: 'Very Poor', value: 40 },
-];
+import { useFeedbackReportController } from '../controllers/feedback';
 
 // Color configurations
 const COLORS = ['#611463', '#f7981e', '#8e44ad', '#16a085', '#e67e22'];
 
-const FeedbackReport = () => {
-  const [filterOpen, setFilterOpen] = useState(false);
-  
-  // Reusable filter panel component
+const FeedbackReport: React.FC = () => {
+  const {
+    filterOpen,
+    toggleFilter,
+    filterParams,
+    handleFilterChange,
+    handleDateChange,
+    handleRatingChange,
+    applyFilters,
+    resetFilters,
+    feedbackData,
+    summaryData,
+    loading,
+    error,
+    handleExport,
+    handlePrint,
+    formatDate,
+    RATING_TEXT_MAP
+  } = useFeedbackReportController();
+
+  // Filter panel component
   const FilterPanel = () => (
     <Box sx={{ py: 2, display: filterOpen ? 'block' : 'none' }}>
       <Paper sx={{ p: 2, mb: 3, borderRadius: 2 }}>
-        <Typography variant="subtitle1" fontWeight="bold" mb={2}>Filter Options</Typography>
+        <Typography variant="subtitle1" fontWeight="bold" mb={2}>ຕົວເລືອກການກັ່ນຕອງ</Typography>
         <Grid container spacing={2} alignItems="center">
-          <Grid item xs={12} md={3}>
+          <Grid item xs={12} md={2}>
             <TextField
-              label="Start Date"
+              label="ວັນທີເລີ່ມຕົ້ນ"
               type="date"
+              name="startDate"
               size="small"
               fullWidth
               InputLabelProps={{ shrink: true }}
-              defaultValue="2023-01-01"
+              value={filterParams.startDate || ''}
+              onChange={handleDateChange}
             />
           </Grid>
-          <Grid item xs={12} md={3}>
+          <Grid item xs={12} md={2}>
             <TextField
-              label="End Date"
+              label="ວັນທີສິ້ນສຸດ"
               type="date"
+              name="endDate"
               size="small"
               fullWidth
               InputLabelProps={{ shrink: true }}
-              defaultValue="2023-06-30"
+              value={filterParams.endDate || ''}
+              onChange={handleDateChange}
             />
           </Grid>
-          <Grid item xs={12} md={3}>
+          <Grid item xs={12} md={2}>
+            <TextField
+              label="ໜ້າ"
+              type="number"
+              name="page"
+              size="small"
+              fullWidth
+              value={filterParams.page}
+              onChange={handleFilterChange}
+              inputProps={{ min: 1 }}
+            />
+          </Grid>
+          <Grid item xs={12} md={2}>
+            <TextField
+              label="ຈຳນວນຕໍ່ໜ້າ"
+              type="number"
+              name="limit"
+              size="small"
+              fullWidth
+              value={filterParams.limit}
+              onChange={handleFilterChange}
+              inputProps={{ min: 1, max: 100 }}
+            />
+          </Grid>
+          <Grid item xs={12} md={2}>
             <FormControl fullWidth size="small">
-              <InputLabel>Rating</InputLabel>
-              <Select label="Rating" defaultValue="">
-                <MenuItem value="">All Ratings</MenuItem>
-                <MenuItem value="5">5 Stars</MenuItem>
-                <MenuItem value="4">4 Stars</MenuItem>
-                <MenuItem value="3">3 Stars</MenuItem>
-                <MenuItem value="2">2 Stars</MenuItem>
-                <MenuItem value="1">1 Star</MenuItem>
+              <InputLabel>ຄະແນນຄຳຕິຊົມ</InputLabel>
+              <Select
+                label="ຄະແນນຄຳຕິຊົມ"
+                name="rating"
+                value={filterParams.rating || ''}
+                onChange={handleRatingChange}
+              >
+                <MenuItem value="">ທັງໝົດ</MenuItem>
+                <MenuItem value="5">5 ດາວ (ດີຫຼາຍ)</MenuItem>
+                <MenuItem value="4">4 ດາວ (ດີ)</MenuItem>
+                <MenuItem value="3">3 ດາວ (ພໍໃຊ້ໄດ້)</MenuItem>
+                <MenuItem value="2">2 ດາວ (ຄວນປັບປຸງ)</MenuItem>
+                <MenuItem value="1">1 ດາວ (ບໍ່ພໍໃຈ)</MenuItem>
               </Select>
             </FormControl>
           </Grid>
-          <Grid item xs={12} md={3}>
+          <Grid item xs={12} md={2}>
             <Box sx={{ display: 'flex', gap: 1 }}>
               <Button 
                 variant="contained" 
+                onClick={applyFilters}
+                disabled={loading}
                 sx={{ 
                   bgcolor: '#611463', 
                   '&:hover': { bgcolor: '#4a0d4c' } 
                 }}
                 fullWidth
               >
-                Apply
+                ນຳໃຊ້
               </Button>
               <Button 
                 variant="outlined" 
+                onClick={resetFilters}
+                disabled={loading}
                 sx={{ 
                   color: '#611463', 
                   borderColor: '#611463',
                   '&:hover': { borderColor: '#4a0d4c' } 
                 }}
               >
-                Reset
+                ຕັ້ງຄ່າໃໝ່
               </Button>
             </Box>
           </Grid>
@@ -109,12 +162,12 @@ const FeedbackReport = () => {
     </Box>
   );
   
-  // Reusable action buttons
+  // Action buttons component
   const ActionButtons = () => (
     <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
       <Button
         startIcon={<FilterIcon />}
-        onClick={() => setFilterOpen(!filterOpen)}
+        onClick={toggleFilter}
         sx={{ 
           color: '#611463', 
           borderColor: '#611463',
@@ -122,11 +175,13 @@ const FeedbackReport = () => {
         }}
         variant="outlined"
       >
-        Filters
+        ຕົວກັ່ນຕອງ
       </Button>
       <Box>
         <Button
           startIcon={<DownloadIcon />}
+          onClick={handleExport}
+          disabled={loading || !feedbackData.length}
           sx={{ 
             mr: 1,
             color: '#611463', 
@@ -135,24 +190,134 @@ const FeedbackReport = () => {
           }}
           variant="outlined"
         >
-          Export
+          ສົ່ງອອກ
         </Button>
         <Button
           startIcon={<PrintIcon />}
+          onClick={handlePrint}
+          disabled={loading || !feedbackData.length}
           sx={{ 
             bgcolor: '#f7981e', 
             '&:hover': { bgcolor: '#e58b17' } 
           }}
           variant="contained"
         >
-          Print
+          ພີມ
         </Button>
       </Box>
     </Box>
   );
-  
+
+  // Rating chart component
+  const RatingChart = () => {
+    if (feedbackData.length === 0) {
+      return (
+        <Box sx={{ 
+          height: 300, 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'center',
+          color: 'text.secondary' 
+        }}>
+          <Typography>ບໍ່ມີຂໍ້ມູນສຳລັບການເລືອກປະຈຸບັນ</Typography>
+        </Box>
+      );
+    }
+
+    // Calculate percentages for display
+    const total = feedbackData.reduce((sum, item) => sum + item.value, 0);
+    const dataWithPercentage = feedbackData.map(item => ({
+      ...item,
+      percentage: Math.round((item.value / total) * 100)
+    }));
+
+    return (
+      <ResponsiveContainer width="100%" height={300}>
+        <PieChart>
+          <Pie
+            data={dataWithPercentage}
+            cx="50%"
+            cy="50%"
+            labelLine={false}
+            outerRadius={100}
+            fill="#8884d8"
+            dataKey="value"
+            label={({name, percentage}) => `${name}: ${percentage}%`}
+          >
+            {feedbackData.map((entry, index) => (
+              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+            ))}
+          </Pie>
+          <Tooltip formatter={(value) => [value, 'ຈຳນວນ']} />
+          <Legend />
+        </PieChart>
+      </ResponsiveContainer>
+    );
+  };
+
+  // Recent comments component
+  const RecentComments = () => {
+    const { recentComments } = summaryData;
+    
+    if (!recentComments || recentComments.length === 0) {
+      return (
+        <Box sx={{ 
+          py: 4, 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'center',
+          color: 'text.secondary' 
+        }}>
+          <Typography>ບໍ່ມີຂໍ້ມູນຄຳຕິຊົມລ່າສຸດ</Typography>
+        </Box>
+      );
+    }
+    
+    return (
+      <Box sx={{ maxHeight: 300, overflow: 'auto' }}>
+        {recentComments.map((comment, index) => {
+          // Determine border color based on rating
+          let borderColor = '#611463'; // Default purple
+          if (comment.rating <= 2) {
+            borderColor = '#e74c3c'; // Red for poor ratings
+          } else if (comment.rating === 3) {
+            borderColor = '#f7981e'; // Orange for average ratings
+          }
+          
+          const bgColor = borderColor === '#611463' ? '#f9f5fa' : 
+                         borderColor === '#f7981e' ? '#fef9f2' : '#fdf2f2';
+          
+          return (
+            <Box 
+              key={comment.id} 
+              sx={{ 
+                p: 2, 
+                borderLeft: `4px solid ${borderColor}`, 
+                mb: 2, 
+                bgcolor: bgColor 
+              }}
+            >
+              <Typography variant="body2" fontWeight="bold">{comment.rating_text || 'No Title'}</Typography>
+              <Typography variant="body2" sx={{ color: 'text.secondary', mb: 1 }}>
+                {comment.message || 'No detailed feedback provided.'}
+              </Typography>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                <Typography variant="caption">
+                  {comment.user_name} - {comment.service_name}
+                </Typography>
+                <Typography variant="caption">
+                  ຄະແນນ: {comment.rating}/5 ({comment.rating_text})
+                </Typography>
+              </Box>
+            </Box>
+          );
+        })}
+      </Box>
+    );
+  };
+
   return (
-    <Box>
+    <Box className="feedback-report-container" id="feedback-report-print">
       <Typography variant="h6" mb={3} fontWeight="bold" color="#611463">
         ລາຍງານການໃຫ້ຄຳເຫັນ
       </Typography>
@@ -160,109 +325,75 @@ const FeedbackReport = () => {
       <ActionButtons />
       <FilterPanel />
       
-      <Grid container spacing={3}>
-        <Grid item xs={12} md={5}>
-          <Paper sx={{ p: 3, borderRadius: 2 }}>
-            <Typography variant="subtitle1" mb={2} fontWeight="bold">
-              ອັດຕາຂອງຄຳຕິຊົມ
-            </Typography>
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={feedbackData}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  outerRadius={100}
-                  fill="#8884d8"
-                  dataKey="value"
-                  label={({name, percent}) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                >
-                  {feedbackData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip />
-                <Legend />
-              </PieChart>
-            </ResponsiveContainer>
-          </Paper>
-        </Grid>
-        
-        <Grid item xs={12} md={7}>
-          <Paper sx={{ p: 3, borderRadius: 2 }}>
-            <Typography variant="subtitle1" mb={2} fontWeight="bold">
-              ຕົວຊີ້ວັດຄຳຕິຊົມ
-            </Typography>
-            <Grid container spacing={2}>
-              <Grid item xs={6} md={3}>
-                <Box sx={{ textAlign: 'center' }}>
-                  <Typography variant="h4" color="#611463" fontWeight="bold">4.6</Typography>
-                  <Typography variant="body2">Average Rating</Typography>
-                </Box>
+      {loading ? (
+        <Box sx={{ display: 'flex', justifyContent: 'center', my: 8 }}>
+          <CircularProgress sx={{ color: '#611463' }} />
+        </Box>
+      ) : error ? (
+        <Box sx={{ textAlign: 'center', my: 4, color: 'error.main' }}>
+          <Typography>{error}</Typography>
+        </Box>
+      ) : (
+        <Grid container spacing={3}>
+          <Grid item xs={12} md={5}>
+            <Paper sx={{ p: 3, borderRadius: 2 }}>
+              <Typography variant="subtitle1" mb={2} fontWeight="bold">
+                ອັດຕາຂອງຄຳຕິຊົມ
+              </Typography>
+              <RatingChart />
+            </Paper>
+          </Grid>
+          
+          <Grid item xs={12} md={7}>
+            <Paper sx={{ p: 3, borderRadius: 2 }}>
+              <Typography variant="subtitle1" mb={2} fontWeight="bold">
+                ຕົວຊີ້ວັດຄຳຕິຊົມ
+              </Typography>
+              <Grid container spacing={2}>
+                <Grid item xs={6} md={3}>
+                  <Box sx={{ textAlign: 'center' }}>
+                    <Typography variant="h4" color="#611463" fontWeight="bold">
+                      {summaryData.averageRating.toFixed(1)}
+                    </Typography>
+                    <Typography variant="body2">ຄະແນນສະເລ່ຍ</Typography>
+                  </Box>
+                </Grid>
+                <Grid item xs={6} md={3}>
+                  <Box sx={{ textAlign: 'center' }}>
+                    <Typography variant="h4" color="#f7981e" fontWeight="bold">
+                      {summaryData.totalReviews.toLocaleString()}
+                    </Typography>
+                    <Typography variant="body2">ຄຳຕິຊົມທັງໝົດ</Typography>
+                  </Box>
+                </Grid>
+                <Grid item xs={6} md={3}>
+                  <Box sx={{ textAlign: 'center' }}>
+                    <Typography variant="h4" color="#611463" fontWeight="bold">
+                      {summaryData.positivePercentage.toFixed(0)}%
+                    </Typography>
+                    <Typography variant="body2">ຄຳຕິຊົມດ້ານບວກ</Typography>
+                  </Box>
+                </Grid>
+                <Grid item xs={6} md={3}>
+                  <Box sx={{ textAlign: 'center' }}>
+                    <Typography variant="h4" color="#f7981e" fontWeight="bold">
+                      {summaryData.responseRate}%
+                    </Typography>
+                    <Typography variant="body2">ອັດຕາການຕອບສະໜອງ</Typography>
+                  </Box>
+                </Grid>
               </Grid>
-              <Grid item xs={6} md={3}>
-                <Box sx={{ textAlign: 'center' }}>
-                  <Typography variant="h4" color="#f7981e" fontWeight="bold">1,120</Typography>
-                  <Typography variant="body2">Total Reviews</Typography>
-                </Box>
-              </Grid>
-              <Grid item xs={6} md={3}>
-                <Box sx={{ textAlign: 'center' }}>
-                  <Typography variant="h4" color="#611463" fontWeight="bold">92%</Typography>
-                  <Typography variant="body2">Positive Feedback</Typography>
-                </Box>
-              </Grid>
-              <Grid item xs={6} md={3}>
-                <Box sx={{ textAlign: 'center' }}>
-                  <Typography variant="h4" color="#f7981e" fontWeight="bold">89%</Typography>
-                  <Typography variant="body2">Response Rate</Typography>
-                </Box>
-              </Grid>
-            </Grid>
-            
-            <Divider sx={{ my: 3 }} />
-            
-            <Typography variant="subtitle1" mb={2} fontWeight="bold">
-              ຂໍ້ສະເໜີຄຳຕິຊົມ
-            </Typography>
-            <Box sx={{ maxHeight: 300, overflow: 'auto' }}>
-              <Box sx={{ p: 2, borderLeft: '4px solid #611463', mb: 2, bgcolor: '#f9f5fa' }}>
-                <Typography variant="body2" fontWeight="bold">Excellent Service</Typography>
-                <Typography variant="body2" sx={{ color: 'text.secondary', mb: 1 }}>
-                  The cleaning service was thorough and professional. Will definitely book again!
-                </Typography>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <Typography variant="caption">John D. - Cleaning Service</Typography>
-                  <Typography variant="caption">Rating: 5/5</Typography>
-                </Box>
-              </Box>
               
-              <Box sx={{ p: 2, borderLeft: '4px solid #f7981e', mb: 2, bgcolor: '#fef9f2' }}>
-                <Typography variant="body2" fontWeight="bold">Good Job</Typography>
-                <Typography variant="body2" sx={{ color: 'text.secondary', mb: 1 }}>
-                  The plumber fixed our issue quickly. Service was a bit expensive though.
-                </Typography>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <Typography variant="caption">Sarah M. - Plumbing Service</Typography>
-                  <Typography variant="caption">Rating: 4/5</Typography>
-                </Box>
-              </Box>
+              <Divider sx={{ my: 3 }} />
               
-              <Box sx={{ p: 2, borderLeft: '4px solid #611463', mb: 2, bgcolor: '#f9f5fa' }}>
-                <Typography variant="body2" fontWeight="bold">Very Responsive</Typography>
-                <Typography variant="body2" sx={{ color: 'text.secondary', mb: 1 }}>
-                  Gardener was on time and did an excellent job with our lawn.
-                </Typography>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <Typography variant="caption">Michael R. - Gardening Service</Typography>
-                  <Typography variant="caption">Rating: 5/5</Typography>
-                </Box>
-              </Box>
-            </Box>
-          </Paper>
+              <Typography variant="subtitle1" mb={2} fontWeight="bold">
+                ຂໍ້ສະເໜີຄຳຕິຊົມ
+              </Typography>
+              <RecentComments />
+            </Paper>
+          </Grid>
         </Grid>
-      </Grid>
+      )}
     </Box>
   );
 };

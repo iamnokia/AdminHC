@@ -20,7 +20,7 @@ import {
 // Import report components (modify paths as needed)
 import ServiceUsageReport from './components/serviceUsage';
 import ServiceProviderReport from './components/employee';
-import CarReport from './components/car'; // Updated from history to car
+import CarReport from './components/history'; // Updated from history to car
 import PaymentReport from './components/payment';
 import FeedbackReport from './components/feedback';
 
@@ -81,9 +81,10 @@ const ReportsIndex = () => {
         {[
           { id: 'usage', label: 'ລາຍງານການໃຊ້ບໍລິການ' },
           { id: 'providers', label: 'ລາຍງານຜູ້ໃຫ້ບໍລິການ' },
-          { id: 'car', label: 'ລາຍງານລົດຂອງຜູ້ໃຫ້ບໍລິການ' },
           { id: 'payments', label: 'ລາຍງານການຊຳລະເງິນ' },
-          { id: 'feedback', label: 'ລາຍງານການໃຫ້ຄຳເຫັນ' }
+          { id: 'feedback', label: 'ລາຍງານການໃຫ້ຄຳເຫັນ' },
+          { id: 'history', label: 'ລາຍງານປະຫວັດການບໍລິການ' },
+
         ].map((tab) => (
           <Box 
             key={tab.id}

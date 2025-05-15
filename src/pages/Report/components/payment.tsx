@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { 
   Box, 
   Typography, 
@@ -11,7 +11,10 @@ import {
   MenuItem,
   TextField,
   Card,
-  CardContent
+  CardContent,
+  CircularProgress,
+  Divider,
+  Tooltip as MuiTooltip
 } from '@mui/material';
 import { 
   LineChart, 
@@ -21,85 +24,136 @@ import {
   CartesianGrid, 
   Tooltip, 
   Legend, 
-  ResponsiveContainer 
+  ResponsiveContainer,
+  BarChart,
+  Bar
 } from 'recharts';
 import { 
   FilterAlt as FilterIcon,
   FileDownload as DownloadIcon,
-  Print as PrintIcon
+  Print as PrintIcon,
+  TrendingUp as TrendingUpIcon,
+  TrendingDown as TrendingDownIcon,
+  TrendingFlat as TrendingFlatIcon,
+  Info as InfoIcon
 } from '@mui/icons-material';
 
-// Sample data for charts
-const paymentData = [
-  { name: 'Jan', income: 4000, expense: 2400 },
-  { name: 'Feb', income: 3000, expense: 1398 },
-  { name: 'Mar', income: 2000, expense: 9800 },
-  { name: 'Apr', income: 2780, expense: 3908 },
-  { name: 'May', income: 1890, expense: 4800 },
-  { name: 'Jun', income: 2390, expense: 3800 },
-];
+import { usePaymentReportController } from '../controllers/payment';
 
-const PaymentReport = () => {
-  const [filterOpen, setFilterOpen] = useState(false);
+const PaymentReport: React.FC = () => {
+  const {
+    filterOpen,
+    toggleFilter,
+    filterParams,
+    handleFilterChange,
+    handleDateChange,
+    handleStatusChange,
+    applyFilters,
+    resetFilters,
+    paymentData,
+    summaryData,
+    loading,
+    error,
+    handleExport,
+    handlePrint,
+    formatDate,
+    formatCurrency
+  } = usePaymentReportController();
   
-  // Reusable filter panel component
+  // Filter panel component
   const FilterPanel = () => (
     <Box sx={{ py: 2, display: filterOpen ? 'block' : 'none' }}>
       <Paper sx={{ p: 2, mb: 3, borderRadius: 2 }}>
-        <Typography variant="subtitle1" fontWeight="bold" mb={2}>Filter Options</Typography>
+        <Typography variant="subtitle1" fontWeight="bold" mb={2}>ຕົວເລືອກການກັ່ນຕອງ</Typography>
         <Grid container spacing={2} alignItems="center">
           <Grid item xs={12} md={3}>
             <TextField
-              label="Start Date"
+              label="ວັນທີເລີ່ມຕົ້ນ"
               type="date"
+              name="startDate"
               size="small"
               fullWidth
               InputLabelProps={{ shrink: true }}
-              defaultValue="2023-01-01"
+              value={filterParams.startDate || ''}
+              onChange={handleDateChange}
             />
           </Grid>
           <Grid item xs={12} md={3}>
             <TextField
-              label="End Date"
+              label="ວັນທີສິ້ນສຸດ"
               type="date"
+              name="endDate"
               size="small"
               fullWidth
               InputLabelProps={{ shrink: true }}
-              defaultValue="2023-06-30"
+              value={filterParams.endDate || ''}
+              onChange={handleDateChange}
             />
           </Grid>
-          <Grid item xs={12} md={3}>
+          <Grid item xs={12} md={2}>
+            <TextField
+              label="ໜ້າ"
+              type="number"
+              name="page"
+              size="small"
+              fullWidth
+              value={filterParams.page}
+              onChange={handleFilterChange}
+              inputProps={{ min: 1 }}
+            />
+          </Grid>
+          <Grid item xs={12} md={2}>
+            <TextField
+              label="ຈຳນວນຕໍ່ໜ້າ"
+              type="number"
+              name="limit"
+              size="small"
+              fullWidth
+              value={filterParams.limit}
+              onChange={handleFilterChange}
+              inputProps={{ min: 1, max: 100 }}
+            />
+          </Grid>
+          <Grid item xs={12} md={2}>
             <FormControl fullWidth size="small">
-              <InputLabel>Payment Status</InputLabel>
-              <Select label="Payment Status" defaultValue="">
-                <MenuItem value="">All Statuses</MenuItem>
-                <MenuItem value="completed">Completed</MenuItem>
-                <MenuItem value="pending">Pending</MenuItem>
-                <MenuItem value="failed">Failed</MenuItem>
+              <InputLabel>ສະຖານະການຊຳລະ</InputLabel>
+              <Select
+                label="ສະຖານະການຊຳລະ"
+                name="paymentStatus"
+                value={filterParams.paymentStatus || ''}
+                onChange={handleStatusChange}
+              >
+                <MenuItem value="">ທັງໝົດ</MenuItem>
+                <MenuItem value="completed">ສຳເລັດແລ້ວ</MenuItem>
+                <MenuItem value="pending">ລໍຖ້າ</MenuItem>
+                <MenuItem value="failed">ບໍ່ສຳເລັດ</MenuItem>
               </Select>
             </FormControl>
           </Grid>
-          <Grid item xs={12} md={3}>
-            <Box sx={{ display: 'flex', gap: 1 }}>
+          <Grid item xs={12}>
+            <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
               <Button 
                 variant="contained" 
+                onClick={applyFilters}
+                disabled={loading}
                 sx={{ 
                   bgcolor: '#611463', 
                   '&:hover': { bgcolor: '#4a0d4c' } 
                 }}
-                fullWidth
               >
-                Apply
+                ນຳໃຊ້
               </Button>
               <Button 
                 variant="outlined" 
+                onClick={resetFilters}
+                disabled={loading}
                 sx={{ 
                   color: '#611463', 
                   borderColor: '#611463',
                   '&:hover': { borderColor: '#4a0d4c' } 
                 }}
               >
-                Reset
+                ຕັ້ງຄ່າໃໝ່
               </Button>
             </Box>
           </Grid>
@@ -108,12 +162,22 @@ const PaymentReport = () => {
     </Box>
   );
   
-  // Reusable action buttons
+  // Growth indicator component
+  const GrowthIndicator = ({ value }: { value: number }) => {
+    if (value > 0) {
+      return <TrendingUpIcon sx={{ color: '#4caf50', ml: 1 }} />;
+    } else if (value < 0) {
+      return <TrendingDownIcon sx={{ color: '#f44336', ml: 1 }} />;
+    }
+    return <TrendingFlatIcon sx={{ color: '#9e9e9e', ml: 1 }} />;
+  };
+  
+  // Action buttons component
   const ActionButtons = () => (
     <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
       <Button
         startIcon={<FilterIcon />}
-        onClick={() => setFilterOpen(!filterOpen)}
+        onClick={toggleFilter}
         sx={{ 
           color: '#611463', 
           borderColor: '#611463',
@@ -121,11 +185,13 @@ const PaymentReport = () => {
         }}
         variant="outlined"
       >
-        Filters
+        ຕົວກັ່ນຕອງ
       </Button>
       <Box>
         <Button
           startIcon={<DownloadIcon />}
+          onClick={handleExport}
+          disabled={loading || !paymentData.length}
           sx={{ 
             mr: 1,
             color: '#611463', 
@@ -134,24 +200,160 @@ const PaymentReport = () => {
           }}
           variant="outlined"
         >
-          Export
+          ສົ່ງອອກ
         </Button>
         <Button
           startIcon={<PrintIcon />}
+          onClick={handlePrint}
+          disabled={loading || !paymentData.length}
           sx={{ 
             bgcolor: '#f7981e', 
             '&:hover': { bgcolor: '#e58b17' } 
           }}
           variant="contained"
         >
-          Print
+          ພີມ
         </Button>
       </Box>
     </Box>
   );
-  
+
+  // Payment charts component
+  const PaymentCharts = () => {
+    if (paymentData.length === 0) {
+      return (
+        <Box sx={{ 
+          height: 300, 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'center',
+          color: 'text.secondary' 
+        }}>
+          <Typography>ບໍ່ມີຂໍ້ມູນສຳລັບການເລືອກປະຈຸບັນ</Typography>
+        </Box>
+      );
+    }
+
+    return (
+      <Grid container spacing={2}>
+        <Grid item xs={12}>
+          <Typography variant="subtitle2" fontWeight="medium" mb={1}>
+            ພາບລວມລາຍໄດ້ແບບລາຍເດືອນ
+          </Typography>
+          <ResponsiveContainer width="100%" height={300}>
+            <LineChart data={paymentData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="name" />
+              <YAxis />
+              <Tooltip formatter={(value) => formatCurrency(Number(value))} />
+              <Legend />
+              <Line 
+                type="monotone" 
+                dataKey="income" 
+                stroke="#611463" 
+                activeDot={{ r: 8 }} 
+                name="ລາຍຮັບ" 
+              />
+              <Line 
+                type="monotone" 
+                dataKey="expense" 
+                stroke="#f7981e" 
+                name="ລາຍຈ່າຍ" 
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </Grid>
+        
+        <Grid item xs={12}>
+          <Typography variant="subtitle2" fontWeight="medium" mb={1}>
+            ການວິເຄາະລາຍຮັບແລະລາຍຈ່າຍ
+          </Typography>
+          <ResponsiveContainer width="100%" height={200}>
+            <BarChart data={paymentData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="name" />
+              <YAxis />
+              <Tooltip formatter={(value) => formatCurrency(Number(value))} />
+              <Legend />
+              <Bar dataKey="income" fill="#611463" name="ລາຍຮັບ" />
+              <Bar dataKey="expense" fill="#f7981e" name="ລາຍຈ່າຍ" />
+            </BarChart>
+          </ResponsiveContainer>
+        </Grid>
+      </Grid>
+    );
+  };
+
+  // Recent transactions component
+  const RecentTransactions = () => {
+    const { recentTransactions } = summaryData;
+    
+    if (!recentTransactions || recentTransactions.length === 0) {
+      return (
+        <Box sx={{ 
+          py: 4, 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'center',
+          color: 'text.secondary' 
+        }}>
+          <Typography>ບໍ່ມີຂໍ້ມູນທຸລະກຳລ່າສຸດ</Typography>
+        </Box>
+      );
+    }
+    
+    return (
+      <Box sx={{ overflowX: 'auto' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <thead>
+            <tr style={{ borderBottom: '1px solid #e0e0e0' }}>
+              <th style={{ padding: '12px 8px', textAlign: 'left' }}>ວັນທີ</th>
+              <th style={{ padding: '12px 8px', textAlign: 'left' }}>ລະຫັດທຸລະກຳ</th>
+              <th style={{ padding: '12px 8px', textAlign: 'left' }}>ຜູ້ໃຫ້ບໍລິການ</th>
+              <th style={{ padding: '12px 8px', textAlign: 'left' }}>ຈຳນວນເງີນ</th>
+              <th style={{ padding: '12px 8px', textAlign: 'left' }}>ສະຖານະ</th>
+            </tr>
+          </thead>
+          <tbody>
+            {recentTransactions.map((transaction) => {
+              // Determine status color
+              let statusColor = '';
+              switch (transaction.payment_status.toLowerCase()) {
+                case 'completed':
+                  statusColor = 'green';
+                  break;
+                case 'pending':
+                  statusColor = 'orange';
+                  break;
+                case 'failed':
+                  statusColor = 'red';
+                  break;
+                default:
+                  statusColor = 'inherit';
+              }
+              
+              return (
+                <tr key={transaction.id} style={{ borderBottom: '1px solid #f0f0f0' }}>
+                  <td style={{ padding: '12px 8px' }}>{formatDate(transaction.created_at)}</td>
+                  <td style={{ padding: '12px 8px' }}>{transaction.payment_id}</td>
+                  <td style={{ padding: '12px 8px' }}>{transaction.service_type}</td>
+                  <td style={{ padding: '12px 8px' }}>{formatCurrency(transaction.amount)}</td>
+                  <td style={{ padding: '12px 8px' }}>
+                    <span style={{ color: statusColor }}>
+                      {transaction.payment_status.charAt(0).toUpperCase() + transaction.payment_status.slice(1)}
+                    </span>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </Box>
+    );
+  };
+
   return (
-    <Box>
+    <Box className="payment-report-container" id="payment-report-print">
       <Typography variant="h6" mb={3} fontWeight="bold" color="#611463">
         ລາຍງານການຊຳລະເງິນ
       </Typography>
@@ -159,110 +361,99 @@ const PaymentReport = () => {
       <ActionButtons />
       <FilterPanel />
       
-      <Grid container spacing={3}>
-        <Grid item xs={12}>
-          <Paper sx={{ p: 3, borderRadius: 2 }}>
-            <Typography variant="subtitle1" mb={2} fontWeight="bold">
-              ພາບລວມລາຍໄດ້ແບບລາຍເດືອນ
-            </Typography>
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={paymentData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                <Line type="monotone" dataKey="income" stroke="#611463" activeDot={{ r: 8 }} name="Income" />
-                <Line type="monotone" dataKey="expense" stroke="#f7981e" name="Expense" />
-              </LineChart>
-            </ResponsiveContainer>
-          </Paper>
-        </Grid>
-        
-        <Grid item xs={12} md={6}>
-          <Card sx={{ borderRadius: 2, bgcolor: '#611463', color: 'white' }}>
-            <CardContent>
-              <Typography variant="body2" sx={{ opacity: 0.8 }}>Total Revenue</Typography>
-              <Typography variant="h4" fontWeight="bold">$34,590</Typography>
-              <Box sx={{ mt: 2, display: 'flex', alignItems: 'center' }}>
-                <Box sx={{ 
-                  bgcolor: 'rgba(255,255,255,0.2)', 
-                  borderRadius: 1, 
-                  px: 1, 
-                  py: 0.5,
-                  display: 'inline-block'
-                }}>
-                  <Typography variant="caption">+18.2% vs last period</Typography>
+      {loading ? (
+        <Box sx={{ display: 'flex', justifyContent: 'center', my: 8 }}>
+          <CircularProgress sx={{ color: '#611463' }} />
+        </Box>
+      ) : error ? (
+        <Box sx={{ textAlign: 'center', my: 4, color: 'error.main' }}>
+          <Typography>{error}</Typography>
+        </Box>
+      ) : (
+        <Grid container spacing={3}>
+          <Grid item xs={12}>
+            <Paper sx={{ p: 3, borderRadius: 2 }}>
+              <Typography variant="subtitle1" mb={2} fontWeight="bold">
+                ພາບລວມລາຍໄດ້ແບບລາຍເດືອນ
+              </Typography>
+              <PaymentCharts />
+            </Paper>
+          </Grid>
+          
+          <Grid item xs={12} md={6}>
+            <Card sx={{ borderRadius: 2, bgcolor: '#611463', color: 'white', height: '100%' }}>
+              <CardContent>
+                <Typography variant="body2" sx={{ opacity: 0.8 }}>ລາຍຮັບທັງໝົດ</Typography>
+                <Typography variant="h4" fontWeight="bold">
+                  {formatCurrency(summaryData.totalRevenue)}
+                </Typography>
+                <Box sx={{ mt: 2, display: 'flex', alignItems: 'center' }}>
+                  <Box sx={{ 
+                    bgcolor: 'rgba(255,255,255,0.2)', 
+                    borderRadius: 1, 
+                    px: 1, 
+                    py: 0.5,
+                    display: 'inline-flex',
+                    alignItems: 'center'
+                  }}>
+                    <Typography variant="caption">
+                      {summaryData.revenueGrowthRate > 0 ? '+' : ''}
+                      {summaryData.revenueGrowthRate.toFixed(1)}% ທຽບກັບໄລຍະກ່ອນ
+                    </Typography>
+                    {summaryData.revenueGrowthRate > 0 ? 
+                      <TrendingUpIcon sx={{ fontSize: 16, ml: 0.5 }} /> : 
+                      summaryData.revenueGrowthRate < 0 ? 
+                        <TrendingDownIcon sx={{ fontSize: 16, ml: 0.5 }} /> : 
+                        <TrendingFlatIcon sx={{ fontSize: 16, ml: 0.5 }} />
+                    }
+                  </Box>
                 </Box>
-              </Box>
-            </CardContent>
-          </Card>
-        </Grid>
-        
-        <Grid item xs={12} md={6}>
-          <Card sx={{ borderRadius: 2, bgcolor: '#f7981e', color: 'white' }}>
-            <CardContent>
-              <Typography variant="body2" sx={{ opacity: 0.8 }}>Total Transactions</Typography>
-              <Typography variant="h4" fontWeight="bold">1,245</Typography>
-              <Box sx={{ mt: 2, display: 'flex', alignItems: 'center' }}>
-                <Box sx={{ 
-                  bgcolor: 'rgba(255,255,255,0.2)', 
-                  borderRadius: 1, 
-                  px: 1, 
-                  py: 0.5,
-                  display: 'inline-block'
-                }}>
-                  <Typography variant="caption">+8.7% vs last period</Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+          
+          <Grid item xs={12} md={6}>
+            <Card sx={{ borderRadius: 2, bgcolor: '#f7981e', color: 'white', height: '100%' }}>
+              <CardContent>
+                <Typography variant="body2" sx={{ opacity: 0.8 }}>ທຸລະກຳທັງໝົດ</Typography>
+                <Typography variant="h4" fontWeight="bold">
+                  {summaryData.totalTransactions.toLocaleString()}
+                </Typography>
+                <Box sx={{ mt: 2, display: 'flex', alignItems: 'center' }}>
+                  <Box sx={{ 
+                    bgcolor: 'rgba(255,255,255,0.2)', 
+                    borderRadius: 1, 
+                    px: 1, 
+                    py: 0.5,
+                    display: 'inline-flex',
+                    alignItems: 'center'
+                  }}>
+                    <Typography variant="caption">
+                      {summaryData.transactionsGrowthRate > 0 ? '+' : ''}
+                      {summaryData.transactionsGrowthRate.toFixed(1)}% ທຽບກັບໄລຍະກ່ອນ
+                    </Typography>
+                    {summaryData.transactionsGrowthRate > 0 ? 
+                      <TrendingUpIcon sx={{ fontSize: 16, ml: 0.5 }} /> : 
+                      summaryData.transactionsGrowthRate < 0 ? 
+                        <TrendingDownIcon sx={{ fontSize: 16, ml: 0.5 }} /> : 
+                        <TrendingFlatIcon sx={{ fontSize: 16, ml: 0.5 }} />
+                    }
+                  </Box>
                 </Box>
-              </Box>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </Grid>
+          
+          <Grid item xs={12}>
+            <Paper sx={{ p: 3, borderRadius: 2 }}>
+              <Typography variant="subtitle1" mb={2} fontWeight="bold">
+                ການເຮັດທຸລະກຳລ່າສຸດ
+              </Typography>
+              <RecentTransactions />
+            </Paper>
+          </Grid>
         </Grid>
-        
-        <Grid item xs={12}>
-          <Paper sx={{ p: 3, borderRadius: 2 }}>
-            <Typography variant="subtitle1" mb={2} fontWeight="bold">
-              ການເຮັດທູລະກຳລ້າສຸດ
-            </Typography>
-            <Box sx={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <thead>
-                  <tr style={{ borderBottom: '1px solid #e0e0e0' }}>
-                    <th style={{ padding: '12px 8px', textAlign: 'left' }}>ວັນທີ</th>
-                    <th style={{ padding: '12px 8px', textAlign: 'left' }}>ລະຫັດທຸລະກຳ</th>
-                    <th style={{ padding: '12px 8px', textAlign: 'left' }}>ການບໍລິການ</th>
-                    <th style={{ padding: '12px 8px', textAlign: 'left' }}>ຈຳນວນເງີນ</th>
-                    <th style={{ padding: '12px 8px', textAlign: 'left' }}>ສະຖານະ</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr style={{ borderBottom: '1px solid #f0f0f0' }}>
-                    <td style={{ padding: '12px 8px' }}>Apr 25, 2023</td>
-                    <td style={{ padding: '12px 8px' }}>TRX-7845</td>
-                    <td style={{ padding: '12px 8px' }}>Cleaning</td>
-                    <td style={{ padding: '12px 8px' }}>$120.00</td>
-                    <td style={{ padding: '12px 8px' }}><span style={{ color: 'green' }}>Completed</span></td>
-                  </tr>
-                  <tr style={{ borderBottom: '1px solid #f0f0f0' }}>
-                    <td style={{ padding: '12px 8px' }}>Apr 24, 2023</td>
-                    <td style={{ padding: '12px 8px' }}>TRX-7844</td>
-                    <td style={{ padding: '12px 8px' }}>Plumbing</td>
-                    <td style={{ padding: '12px 8px' }}>$85.50</td>
-                    <td style={{ padding: '12px 8px' }}><span style={{ color: 'green' }}>Completed</span></td>
-                  </tr>
-                  <tr style={{ borderBottom: '1px solid #f0f0f0' }}>
-                    <td style={{ padding: '12px 8px' }}>Apr 23, 2023</td>
-                    <td style={{ padding: '12px 8px' }}>TRX-7843</td>
-                    <td style={{ padding: '12px 8px' }}>Gardening</td>
-                    <td style={{ padding: '12px 8px' }}>$95.00</td>
-                    <td style={{ padding: '12px 8px' }}><span style={{ color: 'orange' }}>Pending</span></td>
-                  </tr>
-                </tbody>
-              </table>
-            </Box>
-          </Paper>
-        </Grid>
-      </Grid>
+      )}
     </Box>
   );
 };

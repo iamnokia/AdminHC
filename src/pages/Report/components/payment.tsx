@@ -39,6 +39,7 @@ import {
 } from '@mui/icons-material';
 
 import { usePaymentReportController } from '../controllers/payment';
+import '../css/Payment.css';
 
 const PaymentReport: React.FC = () => {
   const {
@@ -62,9 +63,9 @@ const PaymentReport: React.FC = () => {
   
   // Filter panel component
   const FilterPanel = () => (
-    <Box sx={{ py: 2, display: filterOpen ? 'block' : 'none' }}>
+    <Box sx={{ py: 2, display: filterOpen ? 'block' : 'none' }} className="filter-panel no-print">
       <Paper sx={{ p: 2, mb: 3, borderRadius: 2 }}>
-        <Typography variant="subtitle1" fontWeight="bold" mb={2}>ຕົວເລືອກການກັ່ນຕອງ</Typography>
+        <Typography variant="subtitle1" fontWeight="bold" mb={2}>ຕົວເລືອກການຟິວເຕີ</Typography>
         <Grid container spacing={2} alignItems="center">
           <Grid item xs={12} md={3}>
             <TextField
@@ -174,7 +175,7 @@ const PaymentReport: React.FC = () => {
   
   // Action buttons component
   const ActionButtons = () => (
-    <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+    <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }} className="no-print">
       <Button
         startIcon={<FilterIcon />}
         onClick={toggleFilter}
@@ -185,7 +186,7 @@ const PaymentReport: React.FC = () => {
         }}
         variant="outlined"
       >
-        ຕົວກັ່ນຕອງ
+        ຟິວເຕີ
       </Button>
       <Box>
         <Button
@@ -212,10 +213,20 @@ const PaymentReport: React.FC = () => {
           }}
           variant="contained"
         >
-          ພີມ
+          ພິມ
         </Button>
       </Box>
     </Box>
+  );
+
+  // Print header component - only visible when printing
+  const PrintHeader = () => (
+    <div className="print-header print-only" style={{ display: 'none' }}>
+      <h1>ລາຍງານການຊຳລະເງິນ</h1>
+      {filterParams.startDate && filterParams.endDate && (
+        <p>ໄລຍະເວລາ: {filterParams.startDate} - {filterParams.endDate}</p>
+      )}
+    </div>
   );
 
   // Payment charts component
@@ -240,45 +251,49 @@ const PaymentReport: React.FC = () => {
           <Typography variant="subtitle2" fontWeight="medium" mb={1}>
             ພາບລວມລາຍໄດ້ແບບລາຍເດືອນ
           </Typography>
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={paymentData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
-              <YAxis />
-              <Tooltip formatter={(value) => formatCurrency(Number(value))} />
-              <Legend />
-              <Line 
-                type="monotone" 
-                dataKey="income" 
-                stroke="#611463" 
-                activeDot={{ r: 8 }} 
-                name="ລາຍຮັບ" 
-              />
-              <Line 
-                type="monotone" 
-                dataKey="expense" 
-                stroke="#f7981e" 
-                name="ລາຍຈ່າຍ" 
-              />
-            </LineChart>
-          </ResponsiveContainer>
+          <div className="report-chart">
+            <ResponsiveContainer width="100%" height={300}>
+              <LineChart data={paymentData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" />
+                <YAxis />
+                <Tooltip formatter={(value) => formatCurrency(Number(value))} />
+                <Legend />
+                <Line 
+                  type="monotone" 
+                  dataKey="income" 
+                  stroke="#611463" 
+                  activeDot={{ r: 8 }} 
+                  name="ລາຍຮັບ" 
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="expense" 
+                  stroke="#f7981e" 
+                  name="ລາຍຈ່າຍ" 
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
         </Grid>
         
         <Grid item xs={12}>
           <Typography variant="subtitle2" fontWeight="medium" mb={1}>
             ການວິເຄາະລາຍຮັບແລະລາຍຈ່າຍ
           </Typography>
-          <ResponsiveContainer width="100%" height={200}>
-            <BarChart data={paymentData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
-              <YAxis />
-              <Tooltip formatter={(value) => formatCurrency(Number(value))} />
-              <Legend />
-              <Bar dataKey="income" fill="#611463" name="ລາຍຮັບ" />
-              <Bar dataKey="expense" fill="#f7981e" name="ລາຍຈ່າຍ" />
-            </BarChart>
-          </ResponsiveContainer>
+          <div className="report-chart">
+            <ResponsiveContainer width="100%" height={200}>
+              <BarChart data={paymentData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" />
+                <YAxis />
+                <Tooltip formatter={(value) => formatCurrency(Number(value))} />
+                <Legend />
+                <Bar dataKey="income" fill="#611463" name="ລາຍຮັບ" />
+                <Bar dataKey="expense" fill="#f7981e" name="ລາຍຈ່າຍ" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         </Grid>
       </Grid>
     );
@@ -352,12 +367,20 @@ const PaymentReport: React.FC = () => {
     );
   };
 
+  // Print footer component - only visible when printing
+  const PrintFooter = () => (
+    <div className="print-footer print-only" style={{ display: 'none' }}>
+          ພິມວັນທີ: {new Date().toLocaleDateString()} {new Date().toLocaleTimeString()}
+    </div>
+  );
+
   return (
     <Box className="payment-report-container" id="payment-report-print">
-      <Typography variant="h6" mb={3} fontWeight="bold" color="#611463">
+      <Typography variant="h6" mb={3} fontWeight="bold" color="#611463" className="report-title no-print">
         ລາຍງານການຊຳລະເງິນ
       </Typography>
       
+      <PrintHeader />
       <ActionButtons />
       <FilterPanel />
       
@@ -454,6 +477,8 @@ const PaymentReport: React.FC = () => {
           </Grid>
         </Grid>
       )}
+      
+      <PrintFooter />
     </Box>
   );
 };

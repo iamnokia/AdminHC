@@ -46,7 +46,7 @@ const useMainController = () => {
       );
       setData(res.data);
     } catch (error) {
-      console.error("Error fetching employee data:", error);
+      console.error("ບໍ່ສາມາດດາວໂຫຼດຂໍ້ມູນຜູ້ໃຫ້ບໍລິການໄດ້:", error);
       setError("Failed to fetch employee data");
     } finally {
       setLoading(false);
@@ -68,7 +68,7 @@ const useMainController = () => {
       setCar(Array.isArray(res.data) ? res.data : [res.data]);
     } catch (error) {
       console.error("Error fetching car data:", error);
-      setError("Failed to fetch car data");
+      setError("ບໍ່ສາມາດດາວໂຫຼດຂໍ້ມູນລົດໄດ້");
     } finally {
       setLoading(false);
     }

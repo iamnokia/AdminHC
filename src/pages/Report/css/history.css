@@ -1,0 +1,228 @@
+/* ServiceHistoryReport.css - Optimized for multi-page printing with large data sets */
+
+/* General styles */
+.service-history-container {
+  padding: 16px;
+}
+
+/* Header styles */
+.report-title {
+  margin-bottom: 16px;
+  font-weight: bold;
+  color: #611463;
+}
+
+/* Chart styles */
+.report-chart {
+  margin-bottom: 12px;
+}
+
+/* Completed status - matching Image 1 */
+.status-completed {
+  background-color: #e6f7ee !important;
+  color: #2e7d32 !important;
+}
+
+/* Print-specific styles */
+@media print {
+  /* Page setup with reasonable margins */
+  @page {
+    size: portrait;
+    margin: 0.5cm;
+  }
+  
+  /* Hide elements that shouldn't appear in print */
+  .no-print {
+    display: none !important;
+  }
+
+  /* Show print-only elements */
+  .print-only {
+    display: block !important;
+  }
+
+  /* Reduce overall font size for print, but keep it readable */
+  body {
+    font-size: 10px !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+
+  /* Adjust the entire container */
+  .service-history-container {
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+  }
+
+  /* Condense headings but keep them readable */
+  h1, h2, h3, h4, h5, h6, 
+  .MuiTypography-h4, 
+  .MuiTypography-h5, 
+  .MuiTypography-h6,
+  .MuiTypography-subtitle1,
+  .MuiTypography-subtitle2 {
+    margin-top: 6px !important;
+    margin-bottom: 6px !important;
+    font-size: 90% !important;
+    line-height: 1.2 !important;
+  }
+
+  /* Print header styling - repeat on each page */
+  .print-header {
+    text-align: center;
+    margin-bottom: 10px;
+    page-break-after: avoid !important;
+    display: table-header-group !important;
+  }
+
+  .print-header h1 {
+    font-size: 16px;
+    color: #611463;
+    margin-bottom: 4px;
+  }
+
+  .print-header p {
+    font-size: 12px;
+    color: #666;
+    margin: 0;
+  }
+
+  /* Print footer styling - repeat on each page */
+  .print-footer {
+    text-align: center;
+    font-size: 10px;
+    color: #666;
+    page-break-before: avoid !important;
+    display: table-footer-group !important;
+  }
+
+  /* CRITICAL: Table handling for multi-page printing */
+  .table-container {
+    display: table !important;
+    width: 100% !important;
+    page-break-inside: auto !important;
+    break-inside: auto !important; /* Add for newer browsers */
+  }
+  
+  /* Table styling for proper pagination */
+  table {
+    width: 100% !important;
+    font-size: 9px !important;
+    border-collapse: collapse !important;
+    page-break-inside: auto !important;
+    break-inside: auto !important; /* Add for newer browsers */
+    table-layout: fixed !important; /* Ensure table doesn't resize between pages */
+  }
+  
+  /* Allow rows to break across pages - CRITICAL FIX */
+  table tr {
+    page-break-inside: auto !important; /* CHANGED from avoid to auto */
+    page-break-after: auto !important;
+    break-inside: auto !important; /* Add for newer browsers */
+  }
+  
+  /* Keep table header with its content and ensure it repeats on each page */
+  table thead {
+    display: table-header-group !important;
+  }
+  
+  /* Allow table body to flow across pages */
+  table tbody {
+    page-break-inside: auto !important;
+    break-inside: auto !important; /* Add for newer browsers */
+  }
+  
+  /* Table footer (if any) */
+  table tfoot {
+    display: table-footer-group !important;
+  }
+
+  /* Table cell styling */
+  th, td {
+    padding: 4px 8px !important;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+    page-break-inside: auto !important; /* CHANGED from avoid to auto */
+    break-inside: auto !important; /* Add for newer browsers */
+  }
+
+  /* Status badge styling - maintain colors when printing */
+  [class*="MuiBox-root"][style*="display: inline-block"] {
+    padding: 2px 6px !important;
+    border-radius: 3px !important;
+    font-size: 8px !important;
+    background-color: #e6f7ee !important; /* Default completed status color */
+    color: #2e7d32 !important; /* Default completed status color */
+  }
+
+  /* Preserve the status colors in printed output */
+  .status-completed {
+    background-color: #e6f7ee !important;
+    color: #2e7d32 !important;
+  }
+  
+  /* Right align monetary values */
+  td:last-child {
+    text-align: right !important;
+  }
+
+  /* Charts handling */
+  .charts-section {
+    page-break-before: always !important;
+  }
+  
+  /* Make charts more compact but still readable */
+  .recharts-wrapper,
+  .recharts-surface {
+    width: 100% !important;
+    height: auto !important;
+    max-height: 180px !important;
+    page-break-inside: avoid !important;
+  }
+
+  /* Scale charts slightly */
+  .report-chart {
+    transform: scale(0.95);
+    transform-origin: top left;
+    margin-bottom: 8px !important;
+  }
+
+  /* Paper styles */
+  .MuiPaper-root {
+    box-shadow: none !important;
+    border: 1px solid #eee;
+    padding: 8px !important;
+    margin-bottom: 10px !important;
+    page-break-inside: auto !important;
+    break-inside: auto !important; /* Add for newer browsers */
+  }
+
+  /* First paper section should avoid page breaks */
+  .MuiPaper-root:first-of-type {
+    page-break-inside: avoid !important;
+  }
+
+  /* Paper section holding charts */
+  .charts-container {
+    page-break-before: always !important;
+  }
+
+  /* Hide pagination for print */
+  .pagination-container {
+    display: none !important;
+  }
+  
+  /* ADDED: Ensure all rows print regardless of pagination limits */
+  .table-all-rows-print tbody tr {
+    display: table-row !important;
+  }
+  
+  /* Ensure the repeated table header has borders */
+  table thead tr th {
+    border-bottom: 2px solid #ddd !important;
+    background-color: #f8f8f8 !important;
+    font-weight: bold !important;
+  }
+}

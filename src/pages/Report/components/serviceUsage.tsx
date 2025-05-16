@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { 
   Box, 
   Typography, 
@@ -24,9 +24,7 @@ import {
   Legend, 
   ResponsiveContainer,
   LineChart,
-  Line,
-  ComposedChart,
-  Area
+  Line
 } from 'recharts';
 import { 
   FilterAlt as FilterIcon,
@@ -39,8 +37,9 @@ import {
 } from '@mui/icons-material';
 
 import { useServiceReportController } from '../controllers/ServiceUsage';
+import '../css/Usage.css';
 
-const ServiceUsageReport: React.FC = () => {
+const ServiceUsageReport = () => {
   const {
     filterOpen,
     toggleFilter,
@@ -61,9 +60,9 @@ const ServiceUsageReport: React.FC = () => {
   
   // Filter panel component
   const FilterPanel = () => (
-    <Box sx={{ py: 2, display: filterOpen ? 'block' : 'none' }}>
+    <Box sx={{ py: 2, display: filterOpen ? 'block' : 'none' }} className="filter-panel no-print">
       <Paper sx={{ p: 2, mb: 3, borderRadius: 2 }}>
-        <Typography variant="subtitle1" fontWeight="bold" mb={2}>ຕົວເລືອກການກັ່ນຕອງ</Typography>
+        <Typography variant="subtitle1" fontWeight="bold" mb={2}>ຕົວເລືອກການຟິວເຕີ</Typography>
         <Grid container spacing={2} alignItems="center">
           <Grid item xs={12} md={3}>
             <TextField
@@ -183,7 +182,7 @@ const ServiceUsageReport: React.FC = () => {
   );
   
   // Growth indicator component
-  const GrowthIndicator = ({ value }: { value: number }) => {
+  const GrowthIndicator = ({ value }) => {
     if (value > 0) {
       return <TrendingUpIcon sx={{ color: '#4caf50', ml: 1 }} />;
     } else if (value < 0) {
@@ -194,7 +193,7 @@ const ServiceUsageReport: React.FC = () => {
   
   // Action buttons component
   const ActionButtons = () => (
-    <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+    <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }} className="no-print">
       <Button
         startIcon={<FilterIcon />}
         onClick={toggleFilter}
@@ -205,7 +204,7 @@ const ServiceUsageReport: React.FC = () => {
         }}
         variant="outlined"
       >
-        ຕົວກັ່ນຕອງ
+        ຟິວເຕີ
       </Button>
       <Box>
         <Button
@@ -238,6 +237,16 @@ const ServiceUsageReport: React.FC = () => {
     </Box>
   );
 
+  // Print header 
+  const PrintHeader = () => (
+    <div className="print-header print-only" style={{ display: 'none' }}>
+      <h1>ລາຍງານການໃຊ້ບໍລິການ</h1>
+      {filterParams.startDate && filterParams.endDate && (
+        <p>ໄລຍະເວລາ: {filterParams.startDate} - {filterParams.endDate}</p>
+      )}
+    </div>
+  );
+
   // Enhanced charts for usage data
   const UsageCharts = () => {
     if (usageData.length === 0) {
@@ -260,46 +269,50 @@ const ServiceUsageReport: React.FC = () => {
           <Typography variant="subtitle2" fontWeight="medium" mb={1}>
             ພາກສ່ວນການບໍລິການ ແລະ ຜູ້ໃຊ້ບໍລິການ
           </Typography>
-          <ResponsiveContainer width="100%" height={200}>
-            <BarChart data={usageData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
-              <YAxis />
-              <Tooltip />
-              <Legend />
-              <Bar dataKey="sessions" fill="#611463" name="ພາກສ່ວນການບໍລິການ" />
-              <Bar dataKey="users" fill="#f7981e" name="ຜູ້ໃຊ້ບໍລິການປະຈຳ" />
-            </BarChart>
-          </ResponsiveContainer>
+          <div className="report-chart">
+            <ResponsiveContainer width="100%" height={200}>
+              <BarChart data={usageData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                <Bar dataKey="sessions" fill="#611463" name="ພາກສ່ວນການບໍລິການ" />
+                <Bar dataKey="users" fill="#f7981e" name="ຜູ້ໃຊ້ບໍລິການປະຈຳ" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         </Grid>
         
         <Grid item xs={12}>
           <Typography variant="subtitle2" fontWeight="medium" mb={1}>
             ແນວໂນ້ມການໃຊ້ບໍລິການ
           </Typography>
-          <ResponsiveContainer width="100%" height={180}>
-            <LineChart data={usageData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
-              <YAxis />
-              <Tooltip />
-              <Legend />
-              <Line 
-                type="monotone" 
-                dataKey="sessions" 
-                stroke="#611463" 
-                activeDot={{ r: 8 }} 
-                name="ພາກສ່ວນການບໍລິການ"
-              />
-              <Line 
-                type="monotone" 
-                dataKey="users" 
-                stroke="#f7981e" 
-                activeDot={{ r: 8 }}
-                name="ຜູ້ໃຊ້ບໍລິການປະຈຳ" 
-              />
-            </LineChart>
-          </ResponsiveContainer>
+          <div className="report-chart">
+            <ResponsiveContainer width="100%" height={180}>
+              <LineChart data={usageData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                <Line 
+                  type="monotone" 
+                  dataKey="sessions" 
+                  stroke="#611463" 
+                  activeDot={{ r: 8 }} 
+                  name="ພາກສ່ວນການບໍລິການ"
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="users" 
+                  stroke="#f7981e" 
+                  activeDot={{ r: 8 }}
+                  name="ຜູ້ໃຊ້ບໍລິການປະຈຳ" 
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
         </Grid>
       </Grid>
     );
@@ -360,12 +373,20 @@ const ServiceUsageReport: React.FC = () => {
     );
   };
 
+  // Print footer
+  const PrintFooter = () => (
+    <div className="print-footer print-only" style={{ display: 'none' }}>
+          ພິມວັນທີ: {new Date().toLocaleDateString()} {new Date().toLocaleTimeString()}
+    </div>
+  );
+
   return (
     <Box className="service-report-container" id="service-report-print">
-      <Typography variant="h6" mb={3} fontWeight="bold" color="#611463">
+      <Typography variant="h6" mb={3} fontWeight="bold" color="#611463" className="report-title no-print">
         ລາຍງານການໃຊ້ບໍລິການ
       </Typography>
       
+      <PrintHeader />
       <ActionButtons />
       <FilterPanel />
       
@@ -428,6 +449,8 @@ const ServiceUsageReport: React.FC = () => {
           </Grid>
         </Grid>
       )}
+      
+      <PrintFooter />
     </Box>
   );
 };

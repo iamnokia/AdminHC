@@ -1,0 +1,223 @@
+/* FeedbackReport.css - Extreme optimization for single-page printing */
+
+/* General styles */
+.feedback-report-container {
+  padding: 16px;
+}
+
+/* Header styles */
+.report-title {
+  margin-bottom: 16px;
+  font-weight: bold;
+  color: #611463;
+}
+
+/* Chart styles */
+.report-chart {
+  margin-bottom: 12px;
+}
+
+/* Print-specific styles */
+@media print {
+  /* Page setup for single page */
+  @page {
+    size: portrait;
+    margin: 0.3cm; /* Extremely small margins */
+  }
+  
+  /* Hide elements that shouldn't appear in print */
+  .no-print {
+    display: none !important;
+  }
+
+  /* Show print-only elements */
+  .print-only {
+    display: block !important;
+  }
+
+  /* Reduce overall font size for print */
+  body {
+    font-size: 9px !important; /* Even smaller base font */
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+
+  /* Condense headings */
+  h1, h2, h3, h4, h5, h6, 
+  .MuiTypography-h4, 
+  .MuiTypography-h5, 
+  .MuiTypography-h6,
+  .MuiTypography-subtitle1 {
+    margin-top: 4px !important;
+    margin-bottom: 4px !important;
+    font-size: 80% !important;
+  }
+
+  /* Extremely compact header */
+  .print-header {
+    margin-bottom: 6px;
+  }
+
+  .print-header h1 {
+    font-size: 14px;
+    margin-bottom: 2px;
+  }
+
+  .print-header p {
+    font-size: 10px;
+    margin: 0;
+  }
+
+  /* Ultra-compact footer */
+  .print-footer {
+    margin-top: 4px;
+    padding-top: 2px;
+    font-size: 8px;
+  }
+
+  /* Extreme pie chart optimization */
+  .recharts-wrapper,
+  .recharts-surface {
+    width: 100% !important;
+    height: 140px !important; /* Fixed, shorter height */
+    page-break-inside: avoid;
+  }
+
+  /* Scale charts down more aggressively */
+  .report-chart {
+    transform: scale(0.75);
+    transform-origin: top left;
+    margin-bottom: 0 !important;
+    height: 140px !important;
+    overflow: hidden !important;
+  }
+
+  /* Fix legend display */
+  .recharts-legend-wrapper {
+    bottom: 0 !important;
+    font-size: 8px !important;
+  }
+
+  /* Extremely compact paper elements */
+  .MuiPaper-root {
+    box-shadow: none !important;
+    border: 1px solid #eee;
+    padding: 4px !important; /* Minimal padding */
+    margin-bottom: 6px !important;
+  }
+
+  /* Critical: reduce the size of the whole container */
+  .feedback-report-container {
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+    transform: scale(0.95);
+    transform-origin: top center;
+  }
+
+  /* Tighter grid spacing */
+  .MuiGrid-container {
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+  }
+
+  .MuiGrid-item {
+    padding: 3px !important; /* Ultra-compact grid items */
+  }
+
+  /* Fix grid layout for printing */
+  .MuiGrid-root {
+    width: 100% !important;
+    margin: 0 !important;
+  }
+
+  /* Make metrics section ultra-compact */
+  .MuiGrid-item .MuiBox-root {
+    text-align: center;
+    padding: 0 !important; 
+    margin: 0 !important;
+  }
+
+  /* Smaller statistics text */
+  .MuiTypography-h4 {
+    font-size: 14px !important;
+    line-height: 1 !important;
+    margin: 0 !important;
+  }
+
+  .MuiTypography-body2 {
+    font-size: 8px !important;
+    line-height: 1 !important;
+    margin: 0 !important;
+  }
+
+  /* Ultra-thin dividers */
+  .MuiDivider-root {
+    margin-top: 4px !important;
+    margin-bottom: 4px !important;
+  }
+
+  /* Minimal comment boxes */
+  .MuiBox-root[style*="borderLeft"] {
+    padding: 2px 4px !important;
+    margin-bottom: 4px !important;
+    border-left-width: 2px !important;
+  }
+
+  /* Severely truncate comments */
+  .MuiBox-root[style*="borderLeft"] .MuiTypography-body2 {
+    max-height: 1.2em !important; /* Only show 1 line */
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    display: -webkit-box !important;
+    -webkit-line-clamp: 1 !important; /* Show only 1 line */
+    -webkit-box-orient: vertical !important;
+    white-space: nowrap !important;
+    font-size: 8px !important;
+  }
+
+  /* Force comments container smaller */
+  .MuiBox-root[style*="maxHeight"] {
+    max-height: 110px !important; /* Much shorter comments section */
+  }
+
+  /* Show up to 2 comments maximum */
+  .MuiBox-root[style*="maxHeight"] .MuiBox-root[style*="borderLeft"]:nth-child(n+3) {
+    display: none !important;
+  }
+
+  /* Make sure scrollbars don't show on print */
+  .MuiBox-root[style*="overflow: auto"] {
+    overflow: visible !important;
+  }
+
+  /* Ultra-tiny chart labels */
+  .recharts-pie-label-text {
+    font-size: 8px !important;
+  }
+
+  .recharts-layer text {
+    font-size: 7px !important;
+  }
+  
+  .recharts-legend-item-text {
+    color: #333 !important;
+    font-size: 8px !important;
+  }
+
+  /* Ensure PieChart cells print with correct colors */
+  .recharts-layer .recharts-sector {
+    stroke: none !important;
+  }
+
+  /* Hide chart labels if necessary */
+  .recharts-pie-label-line {
+    display: none !important;
+  }
+  
+  /* Simplify the pie chart labels to just percentages */
+  .recharts-pie-label-text tspan:first-child {
+    display: none !important;
+  }
+}

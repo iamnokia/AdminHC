@@ -23,6 +23,7 @@ interface FilterParams {
   startDate: string | null;
   endDate: string | null;
   serviceType: string | null;
+  growthRateType: string;
 }
 
 interface UsageDataPoint {
@@ -31,11 +32,20 @@ interface UsageDataPoint {
   users: number;
 }
 
+interface GrowthRate {
+  sessions: number;
+  users: number;
+}
+
 interface SummaryData {
   totalSessions: number;
   totalUsers: number;
   averageSessionsPerUser: number;
-  growthRate: number;
+  growthRate: GrowthRate;
+  currentPeriodLabel: string;
+  previousPeriodLabel: string;
+  currentPeriodSessions: number;
+  previousPeriodSessions: number;
 }
 
 export const useServiceReportController = () => {
@@ -46,7 +56,8 @@ export const useServiceReportController = () => {
     limit: 10,
     startDate: null,
     endDate: null,
-    serviceType: null
+    serviceType: null,
+    growthRateType: 'monthly'
   });
   
   // Data states
@@ -56,7 +67,11 @@ export const useServiceReportController = () => {
     totalSessions: 0,
     totalUsers: 0,
     averageSessionsPerUser: 0,
-    growthRate: 0
+    growthRate: { sessions: 0, users: 0 },
+    currentPeriodLabel: '',
+    previousPeriodLabel: '',
+    currentPeriodSessions: 0,
+    previousPeriodSessions: 0
   });
   
   const [loading, setLoading] = useState<boolean>(false);
@@ -97,6 +112,15 @@ export const useServiceReportController = () => {
       serviceType: value || null
     }));
   };
+  
+  // Handle growth rate type changes
+  const handleGrowthRateTypeChange = (e: React.ChangeEvent<{ name?: string, value: unknown }>) => {
+    const value = e.target.value as string;
+    setFilterParams(prev => ({
+      ...prev,
+      growthRateType: value
+    }));
+  };
 
   // Apply filters and fetch data
   const applyFilters = async () => {
@@ -110,7 +134,8 @@ export const useServiceReportController = () => {
       limit: 10,
       startDate: null,
       endDate: null,
-      serviceType: null
+      serviceType: null,
+      growthRateType: 'monthly'
     });
   };
 
@@ -160,7 +185,11 @@ export const useServiceReportController = () => {
         totalSessions: 0,
         totalUsers: 0,
         averageSessionsPerUser: 0,
-        growthRate: 0
+        growthRate: { sessions: 0, users: 0 },
+        currentPeriodLabel: '',
+        previousPeriodLabel: '',
+        currentPeriodSessions: 0,
+        previousPeriodSessions: 0
       });
     } finally {
       setLoading(false);
@@ -175,49 +204,102 @@ export const useServiceReportController = () => {
         totalSessions: 0,
         totalUsers: 0,
         averageSessionsPerUser: 0,
-        growthRate: 0
+        growthRate: { sessions: 0, users: 0 },
+        currentPeriodLabel: '',
+        previousPeriodLabel: '',
+        currentPeriodSessions: 0,
+        previousPeriodSessions: 0
       });
       return;
     }
 
-    // Group by month
-    const groupedByMonth = _.groupBy(data, (order) => {
-      // Extract month from service_date (assuming format is YYYY-MM-DD)
-      const date = new Date(order.service_date);
-      return date.toLocaleString('en-US', { month: 'short' });
-    });
+    // Determine grouping based on growthRateType
+    let groupByFunction;
+    let formatLabel;
     
-    // Count unique customers per month
-    const monthlyData = Object.entries(groupedByMonth).map(([month, orders]) => {
+    switch(filterParams.growthRateType) {
+      case 'yearly':
+        groupByFunction = (order: ServiceOrder) => {
+          const date = new Date(order.service_date);
+          return date.getFullYear().toString();
+        };
+        formatLabel = (date: Date) => date.getFullYear().toString();
+        break;
+      case 'quarterly':
+        groupByFunction = (order: ServiceOrder) => {
+          const date = new Date(order.service_date);
+          const quarter = Math.floor(date.getMonth() / 3) + 1;
+          return `Q${quarter} ${date.getFullYear()}`;
+        };
+        formatLabel = (date: Date) => {
+          const quarter = Math.floor(date.getMonth() / 3) + 1;
+          return `Q${quarter} ${date.getFullYear()}`;
+        };
+        break;
+      case 'monthly':
+      default:
+        groupByFunction = (order: ServiceOrder) => {
+          const date = new Date(order.service_date);
+          return date.toLocaleString('en-US', { month: 'short', year: 'numeric' });
+        };
+        formatLabel = (date: Date) => 
+          date.toLocaleString('en-US', { month: 'short', year: 'numeric' });
+    }
+    
+    // Group by period
+    const groupedByPeriod = _.groupBy(data, groupByFunction);
+    
+    // Count unique customers per period
+    const periodData = Object.entries(groupedByPeriod).map(([period, orders]) => {
       const uniqueUsers = _.uniqBy(orders, 'customer_id').length;
       
       return {
-        name: month,
+        name: period,
         sessions: orders.length,
-        users: uniqueUsers
+        users: uniqueUsers,
+        // Store the raw date for sorting
+        date: new Date(orders[0].service_date)
       };
     });
     
-    // Sort months chronologically
-    const monthOrder = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    const sortedData = _.sortBy(monthlyData, item => monthOrder.indexOf(item.name));
+    // Sort by date
+    const sortedData = _.sortBy(periodData, 'date');
     
-    setUsageData(sortedData);
+    // Remove date property before setting state
+    const cleanData = sortedData.map(({ name, sessions, users }) => ({ 
+      name, sessions, users 
+    }));
+    
+    setUsageData(cleanData);
     
     // Calculate summary data
     const totalSessions = data.length;
     const totalUsers = _.uniqBy(data, 'customer_id').length;
     const averageSessionsPerUser = totalUsers > 0 ? totalSessions / totalUsers : 0;
     
-    // Calculate growth rate (compare current month with previous month)
-    let growthRate = 0;
+    // Calculate growth rates
+    let sessionsGrowthRate = 0;
+    let usersGrowthRate = 0;
+    let currentPeriodLabel = '';
+    let previousPeriodLabel = '';
+    let currentPeriodSessions = 0;
+    let previousPeriodSessions = 0;
     
     if (sortedData.length >= 2) {
-      const currentMonth = sortedData[sortedData.length - 1];
-      const previousMonth = sortedData[sortedData.length - 2];
+      const currentPeriod = sortedData[sortedData.length - 1];
+      const previousPeriod = sortedData[sortedData.length - 2];
       
-      if (previousMonth.sessions > 0) {
-        growthRate = ((currentMonth.sessions - previousMonth.sessions) / previousMonth.sessions) * 100;
+      currentPeriodLabel = currentPeriod.name;
+      previousPeriodLabel = previousPeriod.name;
+      currentPeriodSessions = currentPeriod.sessions;
+      previousPeriodSessions = previousPeriod.sessions;
+      
+      if (previousPeriod.sessions > 0) {
+        sessionsGrowthRate = ((currentPeriod.sessions - previousPeriod.sessions) / previousPeriod.sessions) * 100;
+      }
+      
+      if (previousPeriod.users > 0) {
+        usersGrowthRate = ((currentPeriod.users - previousPeriod.users) / previousPeriod.users) * 100;
       }
     }
     
@@ -225,7 +307,14 @@ export const useServiceReportController = () => {
       totalSessions,
       totalUsers,
       averageSessionsPerUser,
-      growthRate
+      growthRate: {
+        sessions: sessionsGrowthRate,
+        users: usersGrowthRate
+      },
+      currentPeriodLabel,
+      previousPeriodLabel,
+      currentPeriodSessions,
+      previousPeriodSessions
     });
   };
 
@@ -247,47 +336,9 @@ export const useServiceReportController = () => {
     document.body.removeChild(link);
   };
 
-  // Handle print functionality
+  // Simple print functionality - uses CSS for print styling
   const handlePrint = () => {
-    const printContent = document.getElementById('service-report-print');
-    const originalContents = document.body.innerHTML;
-    
-    if (printContent) {
-      const printCSS = `
-        <style>
-          @media print {
-            body * {
-              visibility: hidden;
-            }
-            #service-report-print, #service-report-print * {
-              visibility: visible;
-            }
-            #service-report-print {
-              position: absolute;
-              left: 0;
-              top: 0;
-              width: 100%;
-            }
-            button, .MuiButton-root {
-              display: none !important;
-            }
-          }
-        </style>
-      `;
-      
-      const printWindow = window.open('', '_blank');
-      if (printWindow) {
-        printWindow.document.write('<html><head><title>Service Usage Report</title>');
-        printWindow.document.write(printCSS);
-        printWindow.document.write('</head><body>');
-        printWindow.document.write(printContent.innerHTML);
-        printWindow.document.write('</body></html>');
-        printWindow.document.close();
-        printWindow.focus();
-        printWindow.print();
-        printWindow.close();
-      }
-    }
+    window.print();
   };
 
   // Initial data fetch on component mount
@@ -303,6 +354,7 @@ export const useServiceReportController = () => {
     handleFilterChange,
     handleDateChange,
     handleServiceTypeChange,
+    handleGrowthRateTypeChange,
     applyFilters,
     resetFilters,
     usageData,

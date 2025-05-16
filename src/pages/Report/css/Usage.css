@@ -1,0 +1,109 @@
+/* ServiceReport.css */
+
+/* General styles */
+.service-report-container {
+  padding: 16px;
+}
+
+/* Header styles */
+.report-title {
+  margin-bottom: 24px;
+  font-weight: bold;
+  color: #611463;
+}
+
+/* Print-specific styles */
+@media print {
+  /* Hide elements that shouldn't appear in print */
+  .no-print {
+    display: none !important;
+  }
+
+  /* Show print-only elements */
+  .print-only {
+    display: block !important;
+  }
+
+  /* Fix chart rendering */
+  .recharts-wrapper,
+  .recharts-surface {
+    width: 100% !important;
+    height: auto !important;
+    page-break-inside: avoid;
+  }
+
+  /* Ensure colors print correctly */
+  body {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+
+  /* Remove shadows and adjust borders for better printing */
+  .MuiPaper-root {
+    box-shadow: none !important;
+    border: 1px solid #eee;
+  }
+
+  /* Adjust margins and layout for printing */
+  .service-report-container {
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+  }
+
+  /* Fix grid layout for printing */
+  .MuiGrid-root {
+    width: 100% !important;
+    margin: 0 !important;
+  }
+
+  /* Add page breaks where needed */
+  .page-break {
+    page-break-after: always;
+  }
+
+  /* Adjust chart margins */
+  .report-chart {
+    margin-bottom: 16px;
+  }
+
+  /* Header for print version */
+  .print-header {
+    text-align: center;
+    margin-bottom: 24px;
+  }
+
+  .print-header h1 {
+    font-size: 24px;
+    color: #611463;
+    margin-bottom: 8px;
+  }
+
+  .print-header p {
+    font-size: 14px;
+    color: #666;
+  }
+
+  /* Footer for print version */
+  .print-footer {
+    margin-top: 24px;
+    padding-top: 12px;
+    border-top: 1px solid #eee;
+    text-align: center;
+    font-size: 12px;
+    color: #666;
+  }
+
+  /* Make sure chart legends are visible */
+  .recharts-legend-item-text {
+    color: #333 !important;
+  }
+
+  /* Ensure grids and axes print properly */
+  .recharts-cartesian-grid-horizontal line,
+  .recharts-cartesian-grid-vertical line,
+  .recharts-cartesian-axis-line {
+    stroke: #ccc !important;
+  }
+}

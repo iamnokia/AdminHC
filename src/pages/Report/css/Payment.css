@@ -1,0 +1,241 @@
+/* PaymentReport.css - Ultra-compact for single-page printing */
+
+/* General styles */
+.payment-report-container {
+  padding: 16px;
+}
+
+/* Header styles */
+.report-title {
+  margin-bottom: 16px;
+  font-weight: bold;
+  color: #611463;
+}
+
+/* Chart styles */
+.report-chart {
+  margin-bottom: 12px;
+}
+
+/* Print-specific styles */
+@media print {
+  /* Extremely small margins */
+  @page {
+    size: portrait;
+    margin: 0.3cm;
+  }
+  
+  /* Hide elements that shouldn't appear in print */
+  .no-print {
+    display: none !important;
+  }
+
+  /* Show print-only elements */
+  .print-only {
+    display: block !important;
+  }
+
+  /* Reduce overall font size for print */
+  body {
+    font-size: 9px !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+
+  /* Scale down entire report */
+  .payment-report-container {
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+    transform: scale(0.95);
+    transform-origin: top center;
+  }
+
+  /* Extremely condensed headings */
+  h1, h2, h3, h4, h5, h6, 
+  .MuiTypography-h4, 
+  .MuiTypography-h5, 
+  .MuiTypography-h6,
+  .MuiTypography-subtitle1 {
+    margin-top: 4px !important;
+    margin-bottom: 4px !important;
+    font-size: 80% !important;
+    line-height: 1.1 !important;
+  }
+
+  /* Fix chart rendering with drastically reduced height */
+  .recharts-wrapper,
+  .recharts-surface {
+    width: 100% !important;
+    height: 120px !important; /* Fixed, very short height */
+    max-height: 120px !important;
+    page-break-inside: avoid;
+  }
+
+  /* Scale charts down more aggressively */
+  .report-chart {
+    transform: scale(0.8);
+    transform-origin: top left;
+    margin-bottom: 4px !important;
+    height: 120px !important;
+    overflow: hidden !important;
+  }
+
+  /* Remove shadows and adjust borders for better printing */
+  .MuiPaper-root {
+    box-shadow: none !important;
+    border: 1px solid #eee;
+    padding: 4px !important; /* Minimal padding */
+    margin-bottom: 6px !important;
+  }
+
+  /* Reduce card content padding drastically */
+  .MuiCardContent-root {
+    padding: 6px !important;
+  }
+
+  /* Ultra-compact grid spacing */
+  .MuiGrid-container {
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+  }
+
+  .MuiGrid-item {
+    padding: 3px !important; /* Ultra-compact grid items */
+  }
+
+  /* Fix grid layout for printing */
+  .MuiGrid-root {
+    width: 100% !important;
+    margin: 0 !important;
+  }
+
+  /* Minimal header */
+  .print-header {
+    text-align: center;
+    margin-bottom: 6px;
+  }
+
+  .print-header h1 {
+    font-size: 14px;
+    color: #611463;
+    margin-bottom: 2px;
+  }
+
+  .print-header p {
+    font-size: 10px;
+    color: #666;
+    margin: 0;
+  }
+
+  /* Minimal footer */
+  .print-footer {
+    margin-top: 4px;
+    padding-top: 2px;
+    border-top: 1px solid #eee;
+    text-align: center;
+    font-size: 8px;
+    color: #666;
+  }
+
+  /* Extremely small chart legends and labels */
+  .recharts-legend-wrapper {
+    font-size: 8px !important;
+  }
+
+  .recharts-legend {
+    margin-bottom: 0 !important;
+  }
+
+  .recharts-legend-item-text {
+    color: #333 !important;
+    font-size: 8px !important;
+  }
+
+  /* Make chart elements smaller */
+  .recharts-cartesian-grid-horizontal line,
+  .recharts-cartesian-grid-vertical line,
+  .recharts-cartesian-axis-line {
+    stroke: #ccc !important;
+  }
+
+  .recharts-xAxis,
+  .recharts-yAxis {
+    font-size: 7px !important;
+  }
+  
+  /* Hide some axis ticks to save space */
+  .recharts-cartesian-axis-tick:nth-child(even) {
+    display: none !important;
+  }
+  
+  /* Ensure card colors print properly */
+  .MuiCard-root {
+    print-color-adjust: exact !important;
+  }
+  
+  /* Ultra-compact cards, reduce internal spacing */
+  .MuiCard-root .MuiCardContent-root {
+    padding: 4px !important;
+  }
+  
+  /* Make summary cards more compact */
+  .MuiCard-root .MuiTypography-h4 {
+    font-size: 14px !important;
+    line-height: 1 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .MuiCard-root .MuiBox-root {
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  
+  .MuiCard-root .MuiTypography-body2,
+  .MuiCard-root .MuiTypography-caption {
+    font-size: 8px !important;
+    line-height: 1 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  
+  /* Super-compact tables */
+  table {
+    width: 100% !important;
+    break-inside: avoid;
+    font-size: 8px !important;
+    margin-top: 4px !important;
+    margin-bottom: 4px !important;
+    border-collapse: collapse !important;
+  }
+  
+  /* Minimal table cell padding */
+  th, td {
+    padding: 2px !important;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+  }
+  
+  /* Limit table height and show only 3 rows maximum */
+  table tbody tr:nth-child(n+4) {
+    display: none !important;
+  }
+  
+  /* Reduce vertical spacing throughout */
+  .MuiTypography-body1,
+  .MuiTypography-body2 {
+    margin-bottom: 2px !important;
+    line-height: 1.1 !important;
+  }
+  
+  /* Make Line and Bar elements thinner */
+  .recharts-layer path {
+    stroke-width: 1px !important;
+  }
+  
+  .recharts-bar-rectangle {
+    stroke-width: 0 !important;
+  }
+}

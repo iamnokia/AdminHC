@@ -28,10 +28,12 @@ import {
 import { 
   FilterAlt as FilterIcon,
   FileDownload as DownloadIcon,
-  Print as PrintIcon
+  Print as PrintIcon,
+  Sort as SortIcon
 } from '@mui/icons-material';
 
 import { useServiceHistoryController } from '../controllers/history';
+import '../css/history.css'; // Import the flexible CSS
 
 // Color configurations
 const COLORS = ['#611463', '#f7981e', '#8e44ad', '#16a085', '#e67e22', '#3498db', '#e74c3c'];
@@ -65,9 +67,9 @@ const ServiceHistoryReport: React.FC = () => {
   
   // Reusable filter panel component
   const FilterPanel = () => (
-    <Box sx={{ py: 2, display: filterOpen ? 'block' : 'none' }}>
+    <Box sx={{ py: 2, display: filterOpen ? 'block' : 'none' }} className="filter-panel no-print">
       <Paper sx={{ p: 2, mb: 3, borderRadius: 2 }}>
-        <Typography variant="subtitle1" fontWeight="bold" mb={2}>ຕົວເລືອກການກັ່ນຕອງ</Typography>
+        <Typography variant="subtitle1" fontWeight="bold" mb={2}>ຕົວເລືອກການຟິວເຕີ</Typography>
         <Grid container spacing={2} alignItems="center">
           <Grid item xs={12} md={3}>
             <TextField
@@ -93,7 +95,31 @@ const ServiceHistoryReport: React.FC = () => {
               onChange={handleDateChange}
             />
           </Grid>
-          <Grid item xs={12} md={3}>
+          <Grid item xs={12} md={2}>
+            <TextField
+              label="ໜ້າ"
+              type="number"
+              name="page"
+              size="small"
+              fullWidth
+              value={filterParams.page}
+              onChange={handleFilterChange}
+              inputProps={{ min: 1 }}
+            />
+          </Grid>
+          <Grid item xs={12} md={2}>
+            <TextField
+              label="ຈຳນວນຕໍ່ໜ້າ"
+              type="number"
+              name="limit"
+              size="small"
+              fullWidth
+              value={filterParams.limit}
+              onChange={handleFilterChange}
+              inputProps={{ min: 1, max: 100 }}
+            />
+          </Grid>
+          <Grid item xs={12} md={2}>
             <FormControl fullWidth size="small">
               <InputLabel>ປະເພດການບໍລິການ</InputLabel>
               <Select 
@@ -112,7 +138,7 @@ const ServiceHistoryReport: React.FC = () => {
               </Select>
             </FormControl>
           </Grid>
-          <Grid item xs={12} md={3}>
+          <Grid item xs={12} md={6}>
             <FormControl fullWidth size="small">
               <InputLabel>ສະຖານະ</InputLabel>
               <Select 
@@ -127,7 +153,7 @@ const ServiceHistoryReport: React.FC = () => {
               </Select>
             </FormControl>
           </Grid>
-          <Grid item xs={12} md={12}>
+          <Grid item xs={12} md={6}>
             <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
               <Button 
                 variant="contained" 
@@ -138,7 +164,7 @@ const ServiceHistoryReport: React.FC = () => {
                   '&:hover': { bgcolor: '#4a0d4c' } 
                 }}
               >
-                ນຳໃຊ້ຕົວກອງ
+                ນຳໃຊ້
               </Button>
               <Button 
                 variant="outlined" 
@@ -150,7 +176,7 @@ const ServiceHistoryReport: React.FC = () => {
                   '&:hover': { borderColor: '#4a0d4c' } 
                 }}
               >
-                ລີເຊັດ
+                ຕັ້ງຄ່າໃໝ່
               </Button>
             </Box>
           </Grid>
@@ -159,21 +185,24 @@ const ServiceHistoryReport: React.FC = () => {
     </Box>
   );
   
-  // Reusable action buttons
+  // Action toolbar with filter and export/print buttons
   const ActionButtons = () => (
-    <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
-      <Button
-        startIcon={<FilterIcon />}
-        onClick={toggleFilter}
-        sx={{ 
-          color: '#611463', 
-          borderColor: '#611463',
-          '&:hover': { borderColor: '#4a0d4c' } 
-        }}
-        variant="outlined"
-      >
-        ຕົວກອງ
-      </Button>
+    <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }} className="no-print">
+      <Box>
+        <Button
+          startIcon={<FilterIcon />}
+          onClick={toggleFilter}
+          sx={{ 
+            color: '#611463', 
+            borderColor: '#611463',
+            '&:hover': { borderColor: '#4a0d4c' },
+            mr: 1
+          }}
+          variant="outlined"
+        >
+          ຟິວເຕີ
+        </Button>
+      </Box>
       <Box>
         <Button
           startIcon={<DownloadIcon />}
@@ -187,7 +216,7 @@ const ServiceHistoryReport: React.FC = () => {
           }}
           variant="outlined"
         >
-          ດາວໂຫລດ
+          ສົ່ງອອກ
         </Button>
         <Button
           startIcon={<PrintIcon />}
@@ -204,12 +233,22 @@ const ServiceHistoryReport: React.FC = () => {
       </Box>
     </Box>
   );
+
+  // Print header component - only visible when printing
+  const PrintHeader = () => (
+    <div className="print-header print-only" style={{ display: 'none' }}>
+      <h1>ຂໍ້ມູນປະຫວັດການບໍລິການ</h1>
+      {filterParams.startDate && filterParams.endDate && (
+        <p>ໄລຍະເວລາ: {filterParams.startDate} - {filterParams.endDate}</p>
+      )}
+    </div>
+  );
   
-  // Service history table component
+  // Service history table component - matching the example in Image 1
   const ServiceHistoryTable = () => {
     if (loading) {
       return (
-        <Box sx={{ display: 'flex', justifyContent: 'center', py: 5 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
           <CircularProgress sx={{ color: '#611463' }} />
         </Box>
       );
@@ -217,26 +256,26 @@ const ServiceHistoryReport: React.FC = () => {
     
     if (error) {
       return (
-        <Box sx={{ textAlign: 'center', py: 4, color: 'error.main' }}>
-          <Typography>{error}</Typography>
+        <Box sx={{ textAlign: 'center', py: 2, color: 'error.main' }}>
+          <Typography variant="caption">{error}</Typography>
         </Box>
       );
     }
     
     if (serviceOrders.length === 0) {
       return (
-        <Box sx={{ textAlign: 'center', py: 4, color: 'text.secondary' }}>
-          <Typography>ບໍ່ພົບຂໍ້ມູນສຳລັບການຄົ້ນຫາປະຈຸບັນ</Typography>
+        <Box sx={{ textAlign: 'center', py: 2, color: 'text.secondary' }}>
+          <Typography variant="caption">ບໍ່ພົບຂໍ້ມູນສຳລັບການຄົ້ນຫາປະຈຸບັນ</Typography>
         </Box>
       );
     }
     
     return (
       <>
-        <Box sx={{ overflowX: 'auto' }}>
+        <Box sx={{ overflowX: 'auto' }} className="avoid-break">
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
-              <tr style={{ borderBottom: '2px solid #e0e0e0', backgroundColor: '#f8f8f8' }}>
+              <tr style={{ borderBottom: '1px solid #e0e0e0' }}>
                 <th style={{ padding: '12px 16px', textAlign: 'left' }}>ວັນທີ</th>
                 <th style={{ padding: '12px 16px', textAlign: 'left' }}>ປະເພດການບໍລິການ</th>
                 <th style={{ padding: '12px 16px', textAlign: 'left' }}>ລາຍຊື່ຜູ້ໃຫ້ບໍລິການ</th>
@@ -263,8 +302,7 @@ const ServiceHistoryReport: React.FC = () => {
                         {order.status}
                       </Box>
                     </td>
-                    <td style={{ padding: '12px 16px', }}>{order.amount}</td>
-                    
+                    <td style={{ padding: '12px 16px', textAlign: 'right' }}>{order.amount}</td>
                   </tr>
                 );
               })}
@@ -272,7 +310,7 @@ const ServiceHistoryReport: React.FC = () => {
           </table>
         </Box>
         
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 3 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 2 }} className="pagination-container">
           <Typography variant="body2" color="text.secondary">
             ສະແດງ {serviceOrders.length} ຈາກ {totalCount} ລາຍການ
           </Typography>
@@ -284,7 +322,7 @@ const ServiceHistoryReport: React.FC = () => {
               onClick={() => handlePageChange(currentPage - 1)}
               sx={{ 
                 minWidth: 0, 
-                p: 1,
+                p: 0.5,
                 color: '#611463',
                 borderColor: '#611463'
               }}
@@ -292,9 +330,7 @@ const ServiceHistoryReport: React.FC = () => {
               &lt;
             </Button>
             
-            {/* Showing up to 3 page buttons */}
             {Array.from({ length: Math.min(3, totalPages) }, (_, i) => {
-              // Calculate page number to ensure current page is in the middle if possible
               let pageNum;
               if (totalPages <= 3) {
                 pageNum = i + 1;
@@ -314,7 +350,7 @@ const ServiceHistoryReport: React.FC = () => {
                   onClick={() => handlePageChange(pageNum)}
                   sx={{ 
                     minWidth: 0, 
-                    p: 1,
+                    p: 0.5,
                     ...(pageNum === currentPage ? {
                       bgcolor: '#611463'
                     } : {
@@ -335,7 +371,7 @@ const ServiceHistoryReport: React.FC = () => {
               onClick={() => handlePageChange(currentPage + 1)}
               sx={{ 
                 minWidth: 0, 
-                p: 1,
+                p: 0.5,
                 color: '#611463',
                 borderColor: '#611463'
               }}
@@ -348,10 +384,10 @@ const ServiceHistoryReport: React.FC = () => {
     );
   };
   
-  // Charts components
+  // Charts components - with appropriate sizing
   const ChartComponents = () => {
     if (loading) {
-      return null; // Don't show loading indicator for charts
+      return null;
     }
     
     if (serviceOrders.length === 0) {
@@ -359,80 +395,91 @@ const ServiceHistoryReport: React.FC = () => {
     }
     
     return (
-      <Grid container spacing={3} sx={{ mt: 1 }}>
+      <Grid container spacing={2} sx={{ mt: 2 }}>
         <Grid item xs={12} md={5}>
-          <Paper sx={{ p: 3, borderRadius: 2 }}>
-            <Typography variant="subtitle1" mb={2} fontWeight="bold">
+          <Paper sx={{ p: 2, borderRadius: 2 }} className="avoid-break">
+            <Typography variant="subtitle2" mb={1} fontWeight="bold">
               ອັດຕາສ່ວນຂອງປະເພດການບໍລິການ
             </Typography>
-            <ResponsiveContainer width="100%" height={280}>
-              <PieChart>
-                <Pie
-                  data={categoryDistribution}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={100}
-                  fill="#8884d8"
-                  dataKey="value"
-                  label={(entry) => `${entry.name}: ${entry.value}%`}
-                  labelLine={false}
-                >
-                  {categoryDistribution.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip formatter={(value) => `${value}%`} />
-                <Legend layout="vertical" verticalAlign="middle" align="right" />
-              </PieChart>
-            </ResponsiveContainer>
+            <div className="report-chart">
+              <ResponsiveContainer width="100%" height={180}>
+                <PieChart>
+                  <Pie
+                    data={categoryDistribution}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={40}
+                    outerRadius={70}
+                    fill="#8884d8"
+                    dataKey="value"
+                    label={({name, value}) => `${value}%`}
+                    labelLine={false}
+                  >
+                    {categoryDistribution.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip formatter={(value) => `${value}%`} />
+                  <Legend layout="horizontal" verticalAlign="bottom" align="center" />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
           </Paper>
         </Grid>
         
         <Grid item xs={12} md={7}>
-          <Paper sx={{ p: 3, borderRadius: 2 }}>
-            <Typography variant="subtitle1" mb={2} fontWeight="bold">
+          <Paper sx={{ p: 2, borderRadius: 2 }} className="avoid-break">
+            <Typography variant="subtitle2" mb={1} fontWeight="bold">
               ການໃຊ້ບໍລິການລາຍເດືອນ
             </Typography>
-            <ResponsiveContainer width="100%" height={280}>
-              <BarChart data={monthlyServiceData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="month" />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                <Bar dataKey="cleaning" name="ທຳຄວາມສະອາດ" fill="#611463" />
-                <Bar dataKey="ac" name="ສ້ອມແປງແອ" fill="#f7981e" />
-                <Bar dataKey="electrical" name="ສ້ອມແປງໄຟຟ້າ" fill="#8e44ad" />
-                <Bar dataKey="plumbing" name="ສ້ອມແປງນ້ຳປະປາ" fill="#16a085" />
-                <Bar dataKey="appliance" name="ແກ່ເຄື່ອງ" fill="#e67e22" />
-                <Bar dataKey="septic" name="ດູດສ້ວມ" fill="#3498db" />
-                <Bar dataKey="termite" name="ກຳຈັດປວກ" fill="#e74c3c" />
-              </BarChart>
-            </ResponsiveContainer>
+            <div className="report-chart">
+              <ResponsiveContainer width="100%" height={180}>
+                <BarChart data={monthlyServiceData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="month" />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Bar dataKey="cleaning" name="ທຳຄວາມສະອາດ" fill="#611463" />
+                  <Bar dataKey="ac" name="ສ້ອມແປງແອ" fill="#f7981e" />
+                  <Bar dataKey="electrical" name="ສ້ອມແປງໄຟຟ້າ" fill="#8e44ad" />
+                  <Bar dataKey="plumbing" name="ສ້ອມແປງນ້ຳປະປາ" fill="#16a085" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
           </Paper>
         </Grid>
       </Grid>
     );
   };
+
+  // Print footer component - only visible when printing
+  const PrintFooter = () => (
+    <div className="print-footer print-only" style={{ display: 'none' }}>
+          ພິມວັນທີ: {new Date().toLocaleDateString()} {new Date().toLocaleTimeString()}
+    </div>
+  );
   
   return (
-    <Box id="service-history-report-print">
-      <Typography variant="h6" mb={3} fontWeight="bold" color="#611463">
-        ລາຍງານປະຫວັດການບໍລິການ
+    <Box className="service-history-container" id="service-history-report-print">
+      <Typography variant="h6" mb={2} fontWeight="bold" color="#611463" className="report-title no-print">
+        ຂໍ້ມູນປະຫວັດການບໍລິການ
       </Typography>
       
+      <PrintHeader />
       <ActionButtons />
       <FilterPanel />
       
-      <Paper sx={{ p: 3, borderRadius: 2, mb: 3 }}>
-        <Typography variant="subtitle1" mb={3} fontWeight="bold">
-          ບັນທຶກປະຫວັດການບໍລິການ
+      <Paper sx={{ p: 2, borderRadius: 2, mb: 2 }}>
+        <Typography variant="subtitle1" mb={2} fontWeight="bold">
+          ຂໍ້ມູນປະຫວັດການບໍລິການ
         </Typography>
         <ServiceHistoryTable />
       </Paper>
       
       <ChartComponents />
+      
+      <PrintFooter />
     </Box>
   );
 };

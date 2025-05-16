@@ -298,46 +298,9 @@ export const usePaymentReportController = () => {
     document.body.removeChild(link);
   };
 
-  // Handle print functionality
+  // Handle print functionality - simplified to use standard print flow
   const handlePrint = () => {
-    const printContent = document.getElementById('payment-report-print');
-    
-    if (printContent) {
-      const printCSS = `
-        <style>
-          @media print {
-            body * {
-              visibility: hidden;
-            }
-            #payment-report-print, #payment-report-print * {
-              visibility: visible;
-            }
-            #payment-report-print {
-              position: absolute;
-              left: 0;
-              top: 0;
-              width: 100%;
-            }
-            button, .MuiButton-root {
-              display: none !important;
-            }
-          }
-        </style>
-      `;
-      
-      const printWindow = window.open('', '_blank');
-      if (printWindow) {
-        printWindow.document.write('<html><head><title>Payment Report</title>');
-        printWindow.document.write(printCSS);
-        printWindow.document.write('</head><body>');
-        printWindow.document.write(printContent.innerHTML);
-        printWindow.document.write('</body></html>');
-        printWindow.document.close();
-        printWindow.focus();
-        printWindow.print();
-        printWindow.close();
-      }
-    }
+    window.print();
   };
 
   // Format date for display (YYYY-MM-DD to Mon DD, YYYY)

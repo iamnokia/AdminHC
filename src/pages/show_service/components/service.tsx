@@ -121,12 +121,12 @@ export const getCategoryTypeFromName = (catName: string | undefined): string => 
   const normalizedName = (catName || '').toLowerCase();
   
   if (normalizedName.includes('cleaning') || normalizedName.includes('ທຳຄວາມສະອາດ')) return 'cleaning';
-  if (normalizedName.includes('electrical') || normalizedName.includes('ໄຟຟ້າ')) return 'electrical';
-  if (normalizedName.includes('aircon') || normalizedName.includes('air') || normalizedName.includes('ແອ')) return 'aircon';
-  if (normalizedName.includes('plumbing') || normalizedName.includes('ປະປາ')) return 'plumbing';
-  if (normalizedName.includes('moving') || normalizedName.includes('ຂົນສົ່ງ')) return 'moving';
-  if (normalizedName.includes('bathroom') || normalizedName.includes('ຫ້ອງນ້ຳ')) return 'bathroom';
-  if (normalizedName.includes('pest') || normalizedName.includes('ກຳຈັດແມງໄມ້')) return 'pest';
+  if (normalizedName.includes('electrical') || normalizedName.includes('ສ້ອມແປງໄຟຟ້າ')) return 'electrical';
+  if (normalizedName.includes('aircon') || normalizedName.includes('ສ້ອງແປງແອ') || normalizedName.includes('ແອ')) return 'aircon';
+  if (normalizedName.includes('plumbing') || normalizedName.includes('ສ້ອມແປງນ້ຳປະປາ')) return 'plumbing';
+  if (normalizedName.includes('moving') || normalizedName.includes('ແກ່ເຄື່ອງ')) return 'moving';
+  if (normalizedName.includes('bathroom') || normalizedName.includes('ດູດສ້ວມ')) return 'bathroom';
+  if (normalizedName.includes('pest') || normalizedName.includes('ກຳຈັດປວກ')) return 'pest';
   return 'other';
 };
 
@@ -219,7 +219,7 @@ const ServiceProviderAdmin: React.FC = () => {
     },
     {
       id: 'aircon',
-      title: 'ສ້ອມແປງແອອາກາດ',
+      title: 'ສ້ອມແປງແອ',
       icon: <AirconIcon />,
       categoryType: 'aircon'
     },

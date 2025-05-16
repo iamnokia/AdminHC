@@ -33,6 +33,7 @@ import {
 } from '@mui/icons-material';
 
 import { useFeedbackReportController } from '../controllers/feedback';
+import '../css/Feedback.css';
 
 // Color configurations
 const COLORS = ['#611463', '#f7981e', '#8e44ad', '#16a085', '#e67e22'];
@@ -59,9 +60,9 @@ const FeedbackReport: React.FC = () => {
 
   // Filter panel component
   const FilterPanel = () => (
-    <Box sx={{ py: 2, display: filterOpen ? 'block' : 'none' }}>
+    <Box sx={{ py: 2, display: filterOpen ? 'block' : 'none' }} className="filter-panel no-print">
       <Paper sx={{ p: 2, mb: 3, borderRadius: 2 }}>
-        <Typography variant="subtitle1" fontWeight="bold" mb={2}>ຕົວເລືອກການກັ່ນຕອງ</Typography>
+        <Typography variant="subtitle1" fontWeight="bold" mb={2}>ຕົວເລືອກການຟິວເຕີ</Typography>
         <Grid container spacing={2} alignItems="center">
           <Grid item xs={12} md={2}>
             <TextField
@@ -164,7 +165,7 @@ const FeedbackReport: React.FC = () => {
   
   // Action buttons component
   const ActionButtons = () => (
-    <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+    <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }} className="no-print">
       <Button
         startIcon={<FilterIcon />}
         onClick={toggleFilter}
@@ -175,7 +176,7 @@ const FeedbackReport: React.FC = () => {
         }}
         variant="outlined"
       >
-        ຕົວກັ່ນຕອງ
+        ຟິວເຕີ
       </Button>
       <Box>
         <Button
@@ -202,10 +203,20 @@ const FeedbackReport: React.FC = () => {
           }}
           variant="contained"
         >
-          ພີມ
+          ພິມ
         </Button>
       </Box>
     </Box>
+  );
+
+  // Print header component - only visible when printing
+  const PrintHeader = () => (
+    <div className="print-header print-only" style={{ display: 'none' }}>
+      <h1>ລາຍງານການໃຫ້ຄຳເຫັນ</h1>
+      {filterParams.startDate && filterParams.endDate && (
+        <p>ໄລຍະເວລາ: {filterParams.startDate} - {filterParams.endDate}</p>
+      )}
+    </div>
   );
 
   // Rating chart component
@@ -213,7 +224,7 @@ const FeedbackReport: React.FC = () => {
     if (feedbackData.length === 0) {
       return (
         <Box sx={{ 
-          height: 300, 
+          height: 180, 
           display: 'flex', 
           alignItems: 'center', 
           justifyContent: 'center',
@@ -232,26 +243,28 @@ const FeedbackReport: React.FC = () => {
     }));
 
     return (
-      <ResponsiveContainer width="100%" height={300}>
-        <PieChart>
-          <Pie
-            data={dataWithPercentage}
-            cx="50%"
-            cy="50%"
-            labelLine={false}
-            outerRadius={100}
-            fill="#8884d8"
-            dataKey="value"
-            label={({name, percentage}) => `${name}: ${percentage}%`}
-          >
-            {feedbackData.map((entry, index) => (
-              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-            ))}
-          </Pie>
-          <Tooltip formatter={(value) => [value, 'ຈຳນວນ']} />
-          <Legend />
-        </PieChart>
-      </ResponsiveContainer>
+      <div className="report-chart">
+        <ResponsiveContainer width="100%" height={220}>
+          <PieChart>
+            <Pie
+              data={dataWithPercentage}
+              cx="50%"
+              cy="50%"
+              labelLine={false}
+              outerRadius={80}
+              fill="#8884d8"
+              dataKey="value"
+              label={({name, percentage}) => `${name}: ${percentage}%`}
+            >
+              {feedbackData.map((entry, index) => (
+                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+              ))}
+            </Pie>
+            <Tooltip formatter={(value) => [value, 'ຈຳນວນ']} />
+            <Legend />
+          </PieChart>
+        </ResponsiveContainer>
+      </div>
     );
   };
 
@@ -262,7 +275,7 @@ const FeedbackReport: React.FC = () => {
     if (!recentComments || recentComments.length === 0) {
       return (
         <Box sx={{ 
-          py: 4, 
+          py: 2, 
           display: 'flex', 
           alignItems: 'center', 
           justifyContent: 'center',
@@ -274,7 +287,7 @@ const FeedbackReport: React.FC = () => {
     }
     
     return (
-      <Box sx={{ maxHeight: 300, overflow: 'auto' }}>
+      <Box sx={{ maxHeight: 220, overflow: 'auto' }}>
         {recentComments.map((comment, index) => {
           // Determine border color based on rating
           let borderColor = '#611463'; // Default purple
@@ -291,14 +304,14 @@ const FeedbackReport: React.FC = () => {
             <Box 
               key={comment.id} 
               sx={{ 
-                p: 2, 
+                p: 1, 
                 borderLeft: `4px solid ${borderColor}`, 
-                mb: 2, 
+                mb: 1, 
                 bgcolor: bgColor 
               }}
             >
               <Typography variant="body2" fontWeight="bold">{comment.rating_text || 'No Title'}</Typography>
-              <Typography variant="body2" sx={{ color: 'text.secondary', mb: 1 }}>
+              <Typography variant="body2" sx={{ color: 'text.secondary', mb: 0.5 }}>
                 {comment.message || 'No detailed feedback provided.'}
               </Typography>
               <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -306,7 +319,7 @@ const FeedbackReport: React.FC = () => {
                   {comment.user_name} - {comment.service_name}
                 </Typography>
                 <Typography variant="caption">
-                  ຄະແນນ: {comment.rating}/5 ({comment.rating_text})
+                  ຄະແນນ: {comment.rating}/5
                 </Typography>
               </Box>
             </Box>
@@ -316,12 +329,20 @@ const FeedbackReport: React.FC = () => {
     );
   };
 
+  // Print footer component - only visible when printing
+  const PrintFooter = () => (
+    <div className="print-footer print-only" style={{ display: 'none' }}>
+          ພິມວັນທີ: {new Date().toLocaleDateString()} {new Date().toLocaleTimeString()}
+    </div>
+  );
+
   return (
     <Box className="feedback-report-container" id="feedback-report-print">
-      <Typography variant="h6" mb={3} fontWeight="bold" color="#611463">
+      <Typography variant="h6" mb={3} fontWeight="bold" color="#611463" className="report-title no-print">
         ລາຍງານການໃຫ້ຄຳເຫັນ
       </Typography>
       
+      <PrintHeader />
       <ActionButtons />
       <FilterPanel />
       
@@ -384,9 +405,9 @@ const FeedbackReport: React.FC = () => {
                 </Grid>
               </Grid>
               
-              <Divider sx={{ my: 3 }} />
+              <Divider sx={{ my: 2 }} />
               
-              <Typography variant="subtitle1" mb={2} fontWeight="bold">
+              <Typography variant="subtitle1" mb={1} fontWeight="bold">
                 ຂໍ້ສະເໜີຄຳຕິຊົມ
               </Typography>
               <RecentComments />
@@ -394,6 +415,8 @@ const FeedbackReport: React.FC = () => {
           </Grid>
         </Grid>
       )}
+      
+      <PrintFooter />
     </Box>
   );
 };

@@ -112,25 +112,8 @@ const FeedbackReport: React.FC = () => {
               inputProps={{ min: 1, max: 100 }}
             />
           </Grid>
-          <Grid item xs={12} md={2}>
-            <FormControl fullWidth size="small">
-              <InputLabel>ຄະແນນຄຳຕິຊົມ</InputLabel>
-              <Select
-                label="ຄະແນນຄຳຕິຊົມ"
-                name="rating"
-                value={filterParams.rating || ''}
-                onChange={handleRatingChange}
-              >
-                <MenuItem value="">ທັງໝົດ</MenuItem>
-                <MenuItem value="5">5 ດາວ (ດີຫຼາຍ)</MenuItem>
-                <MenuItem value="4">4 ດາວ (ດີ)</MenuItem>
-                <MenuItem value="3">3 ດາວ (ພໍໃຊ້ໄດ້)</MenuItem>
-                <MenuItem value="2">2 ດາວ (ຄວນປັບປຸງ)</MenuItem>
-                <MenuItem value="1">1 ດາວ (ບໍ່ພໍໃຈ)</MenuItem>
-              </Select>
-            </FormControl>
-          </Grid>
-          <Grid item xs={12} md={2}>
+        
+          <Grid item xs={12} md={4}>
             <Box sx={{ display: 'flex', gap: 1 }}>
               <Button 
                 variant="contained" 

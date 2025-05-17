@@ -119,41 +119,8 @@ const ServiceHistoryReport: React.FC = () => {
               inputProps={{ min: 1, max: 100 }}
             />
           </Grid>
+        
           <Grid item xs={12} md={2}>
-            <FormControl fullWidth size="small">
-              <InputLabel>ປະເພດການບໍລິການ</InputLabel>
-              <Select 
-                label="ປະເພດການບໍລິການ" 
-                defaultValue=""
-                onChange={handleServiceTypeChange}
-              >
-                <MenuItem value="">ທຸກປະເພດ</MenuItem>
-                <MenuItem value="ທຳຄວາມສະອາດ">ທຳຄວາມສະອາດ</MenuItem>
-                <MenuItem value="ສ້ອມແປງແອ">ສ້ອມແປງແອ</MenuItem>
-                <MenuItem value="ສ້ອມແປງໄຟຟ້າ">ສ້ອມແປງໄຟຟ້າ</MenuItem>
-                <MenuItem value="ສ້ອມແປງນ້ຳປະປາ">ສ້ອມແປງນ້ຳປະປາ</MenuItem>
-                <MenuItem value="ແກ່ເຄື່ອງ">ແກ່ເຄື່ອງ</MenuItem>
-                <MenuItem value="ດູດສ້ວມ">ດູດສ້ວມ</MenuItem>
-                <MenuItem value="ກຳຈັດປວກ">ກຳຈັດປວກ</MenuItem>
-              </Select>
-            </FormControl>
-          </Grid>
-          <Grid item xs={12} md={6}>
-            <FormControl fullWidth size="small">
-              <InputLabel>ສະຖານະ</InputLabel>
-              <Select 
-                label="ສະຖານະ" 
-                defaultValue=""
-                onChange={handleStatusChange}
-              >
-                <MenuItem value="">ທຸກສະຖານະ</MenuItem>
-                <MenuItem value="completed">ສຳເລັດແລ້ວ</MenuItem>
-                <MenuItem value="in-progress">ກຳລັງດຳເນີນການ</MenuItem>
-                <MenuItem value="cancelled">ຍົກເລີກແລ້ວ</MenuItem>
-              </Select>
-            </FormControl>
-          </Grid>
-          <Grid item xs={12} md={6}>
             <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
               <Button 
                 variant="contained" 

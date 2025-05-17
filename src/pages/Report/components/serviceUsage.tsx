@@ -113,43 +113,6 @@ const ServiceUsageReport = () => {
             />
           </Grid>
           <Grid item xs={12} md={2}>
-            <FormControl fullWidth size="small">
-              <InputLabel>ປະເພດບໍລິການ</InputLabel>
-              <Select
-                label="ປະເພດບໍລິການ"
-                name="serviceType"
-                value={filterParams.serviceType || ''}
-                onChange={handleServiceTypeChange}
-              >
-                <MenuItem value="">ທັງໝົດ</MenuItem>
-                <MenuItem value="cleaning">ທຳຄວາມສະອາດ</MenuItem>
-                <MenuItem value="plumbing">ລະບົບນ້ຳ</MenuItem>
-                <MenuItem value="electrical">ລະບົບໄຟຟ້າ</MenuItem>
-                <MenuItem value="gardening">ບໍລິການສວນ</MenuItem>
-              </Select>
-            </FormControl>
-          </Grid>
-          <Grid item xs={12} md={12}>
-            <Typography variant="subtitle2" fontWeight="bold" mt={1} mb={1}>
-              ກຳນົດການເຕີບໂຕ
-            </Typography>
-          </Grid>
-          <Grid item xs={12} md={3}>
-            <FormControl fullWidth size="small">
-              <InputLabel>ປະເພດການເຕີບໂຕ</InputLabel>
-              <Select
-                label="ປະເພດການເຕີບໂຕ"
-                name="growthRateType"
-                value={filterParams.growthRateType}
-                onChange={handleGrowthRateTypeChange}
-              >
-                <MenuItem value="monthly">ເດືອນຕໍ່ເດືອນ</MenuItem>
-                <MenuItem value="quarterly">ໄຕມາດຕໍ່ໄຕມາດ</MenuItem>
-                <MenuItem value="yearly">ປີຕໍ່ປີ</MenuItem>
-              </Select>
-            </FormControl>
-          </Grid>
-          <Grid item xs={12}>
             <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
               <Button 
                 variant="contained" 

@@ -116,22 +116,6 @@ const PaymentReport: React.FC = () => {
             />
           </Grid>
           <Grid item xs={12} md={2}>
-            <FormControl fullWidth size="small">
-              <InputLabel>ສະຖານະການຊຳລະ</InputLabel>
-              <Select
-                label="ສະຖານະການຊຳລະ"
-                name="paymentStatus"
-                value={filterParams.paymentStatus || ''}
-                onChange={handleStatusChange}
-              >
-                <MenuItem value="">ທັງໝົດ</MenuItem>
-                <MenuItem value="completed">ສຳເລັດແລ້ວ</MenuItem>
-                <MenuItem value="pending">ລໍຖ້າ</MenuItem>
-                <MenuItem value="failed">ບໍ່ສຳເລັດ</MenuItem>
-              </Select>
-            </FormControl>
-          </Grid>
-          <Grid item xs={12}>
             <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
               <Button 
                 variant="contained" 

@@ -353,7 +353,7 @@ const ServiceProviderReport = () => {
         className="no-print"
       >
         <Tab label="ຜູ້ໃຊ້ບໍລິການທັງໝົດ" />
-        <Tab label="ຜູ້ໃຊ້ບໍລິການຂົນຍ້າຍ" />
+        <Tab label=":" />
         <Tab label="ສະຖິຕິຂອງຜູ້ໃຊ້ບໍລິການ" />
       </Tabs>
       
@@ -426,7 +426,7 @@ const ServiceProviderReport = () => {
                             <Typography variant="body2">{provider.email}</Typography>
                             <Typography variant="caption">{provider.tel}</Typography>
                           </TableCell>
-                          <TableCell>${provider.price || provider.amount || 0}/hr</TableCell>
+                          <TableCell>${provider.price || provider.amount || 0}</TableCell>
                           <TableCell>{provider.address || '-'}</TableCell>
                           <TableCell>{provider.village || '-'}</TableCell>
                           <TableCell>{provider.city || provider.district || '-'}</TableCell>
@@ -564,7 +564,7 @@ const ServiceProviderReport = () => {
         </Paper>
       )}
       
-      {/* Tab 2: Moving Providers with Car Information */}
+      {/* Tab 2: Moving Providers with Car Information
       {tabValue === 1 && (
         <Paper sx={{ p: 3, borderRadius: 2, mb: 3 }}>
           <Typography variant="subtitle1" mb={3} fontWeight="bold">
@@ -633,7 +633,7 @@ const ServiceProviderReport = () => {
             </TableContainer>
           )}
         </Paper>
-      )}
+      )} */}
       
       {/* Tab 3: Provider Statistics */}
       {tabValue === 2 && (

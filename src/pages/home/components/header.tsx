@@ -162,7 +162,7 @@ const ServiceProviderForm = () => {
             // Create a preview URL for the image
             const previewUrl = URL.createObjectURL(files[0]);
             setImagePreview(previewUrl);
-            
+
             // Call the original handler
             handleFileChange(e);
         }
@@ -174,7 +174,7 @@ const ServiceProviderForm = () => {
         if (imagePreview) {
             URL.revokeObjectURL(imagePreview);
         }
-        
+
         // Clear the preview and form data
         setImagePreview(null);
         setFormData({
@@ -202,8 +202,8 @@ const ServiceProviderForm = () => {
                 <WaveDivider />
 
                 <Collapse in={submitSuccess}>
-                    <Alert 
-                        severity="success" 
+                    <Alert
+                        severity="success"
                         sx={{ mb: 3 }}
                     >
                         ເພີ່ມຂໍ້ມູນສຳເລັດ!
@@ -211,8 +211,8 @@ const ServiceProviderForm = () => {
                 </Collapse>
 
                 {errors.general && (
-                    <Alert 
-                        severity="error" 
+                    <Alert
+                        severity="error"
                         sx={{ mb: 3 }}
                     >
                         {errors.general}
@@ -276,11 +276,52 @@ const ServiceProviderForm = () => {
                                     label="ເບີໂທລະສັບ"
                                     name="tel"
                                     value={formData.tel}
-                                    onChange={handleChange}
+                                    onChange={(e) => {
+                                        const input = e.target.value;
+                                        const prefix = "+85620";
+
+                                        // If user tries to delete the prefix, maintain it
+                                        if (input.length < prefix.length) {
+                                            return;
+                                        }
+
+                                        // Extract only the digits after the prefix
+                                        const digits = input.substring(prefix.length).replace(/\D/g, "");
+
+                                        // Limit to only 8 digits after the prefix
+                                        const limitedDigits = digits.substring(0, 8);
+
+                                        // Set the full value with prefix
+                                        const newValue = prefix + limitedDigits;
+
+                                        // Update form data
+                                        handleChange({
+                                            target: {
+                                                name: "tel",
+                                                value: newValue
+                                            }
+                                        });
+                                    }}
                                     variant="outlined"
-                                    placeholder="020 12345678"
+                                    placeholder="+8562012345678"
                                     error={!!errors.tel}
                                     helperText={errors.tel}
+                                    inputProps={{
+                                        // This ensures the cursor is positioned correctly
+                                        onFocus: (e) => {
+                                            if (e.target.value === "") {
+                                                handleChange({
+                                                    target: {
+                                                        name: "tel",
+                                                        value: "+85620"
+                                                    }
+                                                });
+                                            }
+                                            // Position cursor at the end
+                                            const len = e.target.value.length;
+                                            e.target.setSelectionRange(len, len);
+                                        }
+                                    }}
                                 />
                             </Grid>
                             <Grid item xs={12} sm={6}>
@@ -437,7 +478,7 @@ const ServiceProviderForm = () => {
                             <Grid container justifyContent="center">
                                 <Grid item xs={12} sm={6} sx={{ textAlign: 'center' }}>
                                     <InputLabel sx={{ mb: 1 }}>ຮູບຜູ້ໃຫ້ບໍລິການ (ທາງເລືອກ)</InputLabel>
-                                    
+
                                     {!imagePreview && (
                                         <UploadButton
                                             component="label"
@@ -453,20 +494,20 @@ const ServiceProviderForm = () => {
                                             />
                                         </UploadButton>
                                     )}
-                                    
+
                                     {imagePreview && (
                                         <Box sx={{ mt: 2 }}>
                                             <ImagePreviewBox>
                                                 <ImagePreview src={imagePreview} alt="Preview" />
-                                                <DeleteButton 
-                                                    size="small" 
+                                                <DeleteButton
+                                                    size="small"
                                                     onClick={handleDeleteImage}
                                                     aria-label="Delete image"
                                                 >
                                                     <DeleteIcon sx={{ color: '#f44336' }} />
                                                 </DeleteButton>
                                             </ImagePreviewBox>
-                                            
+
                                             <Button
                                                 sx={{ mt: 1 }}
                                                 startIcon={<CloudUploadIcon />}
@@ -483,7 +524,7 @@ const ServiceProviderForm = () => {
                                             />
                                         </Box>
                                     )}
-                                    
+
                                     <FormHelperText>
                                         ສາມາດຂ້າມໄດ້ຖ້າບໍ່ຕ້ອງການອັບໂຫຼດຮູບພາບໃນຕອນນີ້
                                     </FormHelperText>

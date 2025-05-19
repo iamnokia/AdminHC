@@ -72,7 +72,7 @@ export const useMainControllers = () => {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
-    
+
     // Clear error for this field if it exists
     if (errors[name]) {
       setErrors({ ...errors, [name]: null });
@@ -84,7 +84,7 @@ export const useMainControllers = () => {
     const { name, files } = e.target;
     if (files && files[0]) {
       setFormData({ ...formData, [name]: files[0] });
-      
+
       // Clear error for this field if it exists
       if (errors[name]) {
         setErrors({ ...errors, [name]: null });
@@ -120,9 +120,8 @@ export const useMainControllers = () => {
       newErrors.email = "Please enter a valid email address";
     }
 
-    // Phone validation
-    if (formData.tel && !/^\d{10,12}$/.test(formData.tel.replace(/\s/g, ""))) {
-      newErrors.tel = "Please enter a valid phone number";
+    if (formData.tel && !/^\+85620\d{8}$/.test(formData.tel.replace(/\s/g, ""))) {
+      newErrors.tel = "Please enter a valid phone number with 8 digits after +85620";
     }
 
     // Password validation
@@ -156,7 +155,7 @@ export const useMainControllers = () => {
   // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       // Show validation error alert
       Swal.fire({
@@ -168,7 +167,7 @@ export const useMainControllers = () => {
       });
       return;
     }
-    
+
     // Show loading alert
     Swal.fire({
       title: "ກຳລັງບັນທຶກຂໍ້ມູນ",
@@ -178,33 +177,33 @@ export const useMainControllers = () => {
         Swal.showLoading();
       }
     });
-    
+
     setIsSubmitting(true);
-    
+
     try {
       // Find category name based on cat_id
       const selectedCategory = categories.find(cat => cat.id === formData.cat_id);
       const categoryName = selectedCategory ? selectedCategory.name : "";
-      
+
       // Prepare data based on whether we have an image or not
       if (formData.avatar) {
         // If we have an image, use FormData for multipart/form-data submission
         const submitData = new FormData();
-        
+
         // Add all text fields
         Object.keys(formData).forEach(key => {
           if (key !== 'avatar') {
             submitData.append(key, formData[key]);
           }
         });
-        
+
         // Add file
         submitData.append('avatar', formData.avatar);
-        
+
         // Add additional fields
         submitData.append('status', Status.ACTIVE);
         submitData.append('cat_name', categoryName);
-        
+
         // Send with multipart/form-data
         const response = await axios.post(
           "https://homecare-pro.onrender.com/employees/create_employees",
@@ -215,7 +214,7 @@ export const useMainControllers = () => {
             }
           }
         );
-        
+
         console.log("Employee created with image:", response.data);
       } else {
         // If no image, use regular JSON submission
@@ -226,10 +225,10 @@ export const useMainControllers = () => {
           // Remove the avatar field if it's null to avoid sending null
           avatar: undefined
         };
-        
+
         // Remove the avatar field completely if it's null to avoid sending null
         delete submitData.avatar;
-        
+
         // Send as JSON
         const response = await axios.post(
           "https://homecare-pro.onrender.com/employees/create_employees",
@@ -240,12 +239,12 @@ export const useMainControllers = () => {
             }
           }
         );
-        
+
         console.log("Employee created without image:", response.data);
       }
-      
+
       setSubmitSuccess(true);
-      
+
       // Show success alert
       Swal.fire({
         title: "ສຳເລັດ!",
@@ -254,7 +253,7 @@ export const useMainControllers = () => {
         confirmButtonText: "ຕົກລົງ",
         confirmButtonColor: "#611463"
       });
-      
+
       // Reset form after successful submission
       setFormData({
         first_name: "",
@@ -270,20 +269,20 @@ export const useMainControllers = () => {
         price: "",
         city: "",
       });
-      
+
     } catch (error) {
       console.error("Error creating employee:", error);
-      
+
       // Determine error message
       let errorMessage = "ເກີດຂໍ້ຜິດພາດ. ກະລຸນາລອງໃໝ່ອີກຄັ້ງ.";
-      
+
       // Handle API error responses
       if (error.response && error.response.data) {
         if (error.response.data.message) {
           errorMessage = error.response.data.message;
         }
       }
-      
+
       // Show error alert
       Swal.fire({
         title: "ຂໍ້ຜິດພາດ!",
@@ -292,7 +291,7 @@ export const useMainControllers = () => {
         confirmButtonText: "ຕົກລົງ",
         confirmButtonColor: "#611463"
       });
-      
+
       // Set errors state for form validation
       if (error.response && error.response.data) {
         if (error.response.data.errors) {

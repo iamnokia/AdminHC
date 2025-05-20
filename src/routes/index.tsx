@@ -31,7 +31,6 @@ const RoutesComponent = () => {
         { path: `${CAR_PATH}/:employeeId`, element: <CarForm /> },
         { path: REPORT_PATH, element: <ReportsIndex /> },
         { path: SHOW_SERVICE_PATH, element: <ServiceProviderAdmin /> },
-        { path: SERVICE_STATUS_PATH, element: <ServiceStatusAdmin /> },
         { path: REGISTER_PATH, element: <AdminRegister /> },
         { path: LOGIN_PATH, element: <AdminLogin /> },
       ],

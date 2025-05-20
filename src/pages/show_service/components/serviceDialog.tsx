@@ -167,8 +167,8 @@ const ServiceProviderDetailDialog: React.FC<ServiceProviderDetailDialogProps> = 
       return 'Please enter a valid email address';
     }
     
-    if (field === 'tel' && value && !/^\d{10,12}$/.test(value.toString().replace(/\s/g, ""))) {
-      return 'Please enter a valid phone number';
+    if (field === 'tel' && value && !/^\+85620\d{8}$/.test(value.toString().replace(/\s/g, ""))) {
+      return 'Please enter a valid phone number with 8 digits after +85620';
     }
     
     if (field === 'price' && (isNaN(value) || value <= 0)) {

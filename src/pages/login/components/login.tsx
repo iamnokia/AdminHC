@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+// src/pages/login/components/AdminLogin.tsx
+import React from 'react';
 import {
   Box,
   Typography,
   TextField,
   Button,
-  Paper,
   Container,
   Grid,
   Snackbar,
@@ -13,7 +13,6 @@ import {
   InputAdornment,
   Avatar,
   useTheme,
-  Divider,
   CircularProgress
 } from '@mui/material';
 import {
@@ -23,12 +22,13 @@ import {
   Email as EmailIcon,
   Login as LoginIcon
 } from '@mui/icons-material';
-import LOGO from "../../../../src/assets/icons/HomeCareLogo.png"
+import LOGO from "../../../assets/icons/HomeCareLogo.png";
+import useLoginController from '../controller/index';
 
 // Lao language translations
 const laoTranslations = {
   title: "ເຂົ້າສູ່ລະບົບ",
-  subtitle: "ເຂົ້າສູ່ລະບົບເພື່ອເຂົ້າເຖິງລະບົບ",
+  subtitle: "ເຂົ້າສູ່ລະບົບຂອງຜູ້ດູແລລະບົບ",
   email: "ອີເມວ",
   password: "ລະຫັດຜ່ານ",
   login: "ເຂົ້າສູ່ລະບົບ",
@@ -57,109 +57,74 @@ const formStyles = {
     primary: {
       bgcolor: PRIMARY_COLOR,
       color: 'white',
-      py: 1.8, // Increased padding for larger button
+      py: 1.5,
       '&:hover': {
         bgcolor: '#4a0e4d'
+      }
+    },
+    secondary: {
+      color: PRIMARY_COLOR,
+      border: `1px solid ${PRIMARY_COLOR}`,
+      py: 1.5,
+      '&:hover': {
+        bgcolor: 'rgba(97, 20, 99, 0.04)'
       }
     }
   },
   input: {
     '& .MuiOutlinedInput-root': {
       borderRadius: 1,
-      height: '56px', // Increased height for input fields
+      height: '52px',
       '&.Mui-focused fieldset': {
         borderColor: PRIMARY_COLOR
       }
     },
     '& .MuiInputBase-input': {
-      fontSize: '1.1rem', // Larger font size for better readability
-      padding: '14px 14px 14px 0' // Increased padding
+      fontSize: '1rem',
+      padding: '12px 12px 12px 0'
     },
     '& .MuiInputAdornment-root': {
-      marginLeft: '12px' // More space for icons
+      marginLeft: '12px'
+    }
+  },
+  iconButton: {
+    bgcolor: PRIMARY_COLOR,
+    color: 'white',
+    width: '52px',
+    height: '52px',
+    borderRadius: '4px',
+    ml: 1,
+    '&:hover': {
+      bgcolor: '#4a0e4d'
     }
   }
 };
 
-interface LoginFormData {
-  email: string;
-  password: string;
-}
-
 const AdminLogin: React.FC = () => {
   const theme = useTheme();
-  const [formData, setFormData] = useState<LoginFormData>({
-    email: 'johndoe@example.com',
-    password: 'securePass123'
-  });
-  const [errors, setErrors] = useState<Partial<LoginFormData>>({});
-  const [showPassword, setShowPassword] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [snackbar, setSnackbar] = useState({
-    open: false,
-    message: '',
-    severity: 'success' as 'success' | 'error' | 'info' | 'warning'
-  });
+  const {
+    email,
+    password,
+    showPassword,
+    loading,
+    error,
+    handleClickShowPassword,
+    handleSubmit,
+    handleChangeEmail,
+    handleChangePassword
+  } = useLoginController();
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-    // Clear error when user types
-    if (errors[name as keyof LoginFormData]) {
-      setErrors(prev => ({ ...prev, [name]: '' }));
-    }
-  };
+  const [snackbarOpen, setSnackbarOpen] = React.useState(false);
 
-  const validateForm = (): boolean => {
-    const newErrors: Partial<LoginFormData> = {};
-    
-    if (!formData.email.trim()) {
-      newErrors.email = laoTranslations.validation.email.required;
-    } else if (!/^\S+@\S+\.\S+$/.test(formData.email)) {
-      newErrors.email = laoTranslations.validation.email.invalid;
+  // Show snackbar when error changes
+  React.useEffect(() => {
+    if (error) {
+      setSnackbarOpen(true);
     }
-    
-    if (!formData.password) {
-      newErrors.password = laoTranslations.validation.password.required;
-    }
-    
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!validateForm()) return;
-    
-    setIsSubmitting(true);
-    
-    // Simulate API call
-    setTimeout(() => {
-      setIsSubmitting(false);
-      
-      // Check credentials
-      if (formData.email === 'johndoe@example.com' && formData.password === 'securePass123') {
-        setSnackbar({
-          open: true,
-          message: laoTranslations.successMessage,
-          severity: 'success'
-        });
-      } else {
-        setSnackbar({
-          open: true,
-          message: laoTranslations.errorMessage,
-          severity: 'error'
-        });
-      }
-    }, 1500);
-  };
+  }, [error]);
 
   const handleCloseSnackbar = () => {
-    setSnackbar(prev => ({ ...prev, open: false }));
-  };
-
-  const togglePasswordVisibility = () => {
-    setShowPassword(prev => !prev);
+    setSnackbarOpen(false);
   };
 
   return (
@@ -170,108 +135,70 @@ const AdminLogin: React.FC = () => {
       justifyContent: 'center',
       background: BACKGROUND_COLOR
     }}>
-      <Container maxWidth="sm" sx={{ // Increased from xs to sm for wider container
-        py: { xs: 2, sm: 3 },
-        px: { xs: 2, sm: 3 }
-      }}>
-        <Paper elevation={3} sx={{ 
-          borderRadius: 2, 
-          overflow: 'hidden', 
-          boxShadow: '0 6px 20px rgba(97, 20, 99, 0.15)',
-          width: '100%'
-        }}>
-          {/* Header with Logo */}
-          <Box sx={{
-            p: { xs: 3, sm: 4 }, // Increased padding
-            background: PRIMARY_COLOR,
-            color: 'white',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            flexDirection: 'column',
-            textAlign: 'center'
-          }}>
-            <Avatar 
-              src={LOGO} 
-              alt="HomeCare Logo"
-              sx={{ 
-                width: 80, // Increased logo size
-                height: 80, // Increased logo size
-                mb: 2,
-                border: `2px solid ${SECONDARY_COLOR}`,
-                bgcolor: 'white',
-                padding: '6px' // Increased padding
-              }}
-            />
-            <Typography variant="h4" fontWeight="bold"> {/* Increased from h5 to h4 */}
-              {laoTranslations.title}
-            </Typography>
-            <Typography variant="body1" sx={{ mt: 0.8 }}> {/* Increased from body2 to body1 */}
-              {laoTranslations.subtitle}
-            </Typography>
-          </Box>
-
-          {/* Form content */}
-          <Box
-            component="form"
-            onSubmit={handleSubmit}
-            sx={{
-              p: { xs: 3, sm: 4 }, // Increased padding
-              bgcolor: 'white'
-            }}
-          >
-            <Grid container spacing={3}> {/* Increased spacing from 2 to 3 */}
+      <Container maxWidth="lg" sx={{ p: 10, boxShadow: 10, borderRadius: 5, height: 600 }}>
+        <Grid container spacing={0}>
+          {/* Left side - Form */}
+          <Grid item xs={12} md={6} lg={5}>
+            <Box 
+              component="form" 
+              onSubmit={handleSubmit} 
+              sx={{ p: { xs: 2, sm: 4 } }}
+            >
+              <Box sx={{ mb: 4 }}>
+                <Typography variant="h4" fontWeight="bold">
+                  {laoTranslations.title}
+                </Typography>
+                <Typography variant="body1" color="text.secondary" sx={{ mt: 1 }}>
+                  {laoTranslations.subtitle}
+                </Typography>
+              </Box>
+              
               {/* Email */}
-              <Grid item xs={12}>
+              <Box sx={{ mb: 3, display: 'flex', alignItems: 'flex-start' }}>
                 <TextField
                   fullWidth
                   placeholder={laoTranslations.email}
                   name="email"
                   type="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  error={!!errors.email}
-                  helperText={errors.email}
+                  value={email}
+                  onChange={handleChangeEmail}
                   InputProps={{
                     startAdornment: (
                       <InputAdornment position="start">
-                        <EmailIcon color="action" sx={{ fontSize: 24 }} /> {/* Larger icon */}
+                        <EmailIcon color="action" />
                       </InputAdornment>
                     )
                   }}
                   sx={formStyles.input}
                   required
                 />
-              </Grid>
+                <IconButton sx={formStyles.iconButton}>
+                  <EmailIcon />
+                </IconButton>
+              </Box>
 
               {/* Password */}
-              <Grid item xs={12}>
+              <Box sx={{ mb: 4, display: 'flex', alignItems: 'flex-start' }}>
                 <TextField
                   fullWidth
                   placeholder={laoTranslations.password}
                   name="password"
                   type={showPassword ? 'text' : 'password'}
-                  value={formData.password}
-                  onChange={handleChange}
-                  error={!!errors.password}
-                  helperText={errors.password}
+                  value={password}
+                  onChange={handleChangePassword}
                   InputProps={{
                     startAdornment: (
                       <InputAdornment position="start">
-                        <LockIcon color="action" sx={{ fontSize: 24 }} /> {/* Larger icon */}
+                        <LockIcon color="action" />
                       </InputAdornment>
                     ),
                     endAdornment: (
                       <InputAdornment position="end">
                         <IconButton
-                          onClick={togglePasswordVisibility}
+                          onClick={handleClickShowPassword}
                           edge="end"
-                          size="medium" // Changed from small to medium
                         >
-                          {showPassword ? 
-                            <VisibilityOff sx={{ fontSize: 22 }} /> : 
-                            <Visibility sx={{ fontSize: 22 }} />
-                          }
+                          {showPassword ? <VisibilityOff /> : <Visibility />}
                         </IconButton>
                       </InputAdornment>
                     )
@@ -279,50 +206,97 @@ const AdminLogin: React.FC = () => {
                   sx={formStyles.input}
                   required
                 />
-              </Grid>
-            </Grid>
+                <IconButton sx={formStyles.iconButton}>
+                  <LockIcon />
+                </IconButton>
+              </Box>
 
-            <Box sx={{ mt: 4 }}> {/* Increased margin from 3 to 4 */}
-              <Button
-                type="submit"
-                fullWidth
-                variant="contained"
-                sx={{
-                  ...formStyles.button.primary,
-                  py: 1.8, // Taller button
-                  textTransform: 'none',
-                  fontSize: '1.15rem', // Larger font size
-                  borderRadius: '4px', // Slightly rounded corners
-                  height: '56px' // Fixed height for button
-                }}
-                disabled={isSubmitting}
-                startIcon={isSubmitting ? 
-                  <CircularProgress size={24} color="inherit" /> : 
-                  <LoginIcon sx={{ fontSize: 24 }} />
-                }
-              >
-                {isSubmitting ? laoTranslations.loggingIn : laoTranslations.login}
-              </Button>
+              {/* Login Button */}
+              <Box sx={{ mb: 2 }}>
+                <Button
+                  type="submit"
+                  fullWidth
+                  variant="contained"
+                  sx={{
+                    ...formStyles.button.primary,
+                    textTransform: 'none',
+                    fontSize: '1.1rem',
+                    height: '52px'
+                  }}
+                  disabled={loading}
+                  startIcon={loading ? 
+                    <CircularProgress size={24} color="inherit" /> : 
+                    <LoginIcon />
+                  }
+                >
+                  {loading ? laoTranslations.loggingIn : laoTranslations.login}
+                </Button>
+              </Box>
             </Box>
-          </Box>
+          </Grid>
 
-          <Snackbar
-            open={snackbar.open}
-            autoHideDuration={6000}
-            onClose={handleCloseSnackbar}
-            anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+          {/* Right side - Logo */}
+          <Grid 
+            item 
+            xs={12} 
+            md={6} 
+            lg={7} 
+            sx={{ 
+              display: { xs: 'none', md: 'flex' },
+              alignItems: 'center',
+              justifyContent: 'center',
+              bgcolor: PRIMARY_COLOR,
+              borderRadius: { md: '16px' }
+            }}
           >
-            <Alert 
-              onClose={handleCloseSnackbar} 
-              severity={snackbar.severity} 
-              sx={{ width: '100%', boxShadow: theme.shadows[3] }}
-              variant="filled"
+            <Box 
+              sx={{ 
+                p: 6, 
+                display: 'flex', 
+                flexDirection: 'column', 
+                alignItems: 'center',
+                justifyContent: 'center',
+                height: '100%'
+              }}
             >
-              {snackbar.message}
-            </Alert>
-          </Snackbar>
-        </Paper>
+              <Avatar
+                src={LOGO}
+                alt="HomeCare Logo"
+                sx={{
+                  width: 180,
+                  height: 180,
+                  border: `4px solid ${SECONDARY_COLOR}`,
+                  bgcolor: 'white',
+                  padding: '12px',
+                  mb: 3
+                }}
+              />
+              <Typography variant="h2" sx={{ color: 'white', fontWeight: 'bold', mb: 2 }}>
+                HomeCare
+              </Typography>
+              <Typography variant="h5" sx={{ color: 'white', textAlign: 'center' }}>
+                ເຂົ້າສູ່ລະບົບຂອງຜູ້ດູແລລະບົບ
+              </Typography>
+            </Box>
+          </Grid>
+        </Grid>
       </Container>
+
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={6000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert 
+          onClose={handleCloseSnackbar} 
+          severity="error" 
+          sx={{ width: '100%', boxShadow: theme.shadows[3] }}
+          variant="filled"
+        >
+          {error || laoTranslations.errorMessage}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };

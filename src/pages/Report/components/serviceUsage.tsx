@@ -383,7 +383,7 @@ const ServiceUsageReport = () => {
                 </Typography>
               </Box>
               <Box sx={{ mb: 2 }}>
-                <Typography variant="body2" color="text.secondary">ຈຳນວນຜູ້ໃຊ້ບໍລິການທັງໝົດ</Typography>
+                <Typography variant="body2" color="text.secondary">ຈຳນວນຜູ້ໃຊ້ບໍລິການປະຈຳ</Typography>
                 <Typography variant="h4" color="#f7981e" fontWeight="bold">
                   {summaryData.totalUsers.toLocaleString()}
                 </Typography>

@@ -1,11 +1,12 @@
+// src/App.tsx
 import { Box } from "@mui/material";
 import RoutesComponent from "./routes";
 import "./App.css";
 import axios from "axios";
 import { useDispatch } from "react-redux";
 import { clearUserData, loginSuccess } from "./store/slices/userSlice";
-import AdminRegister from "./pages/register/components/register";
-import { Login } from "@mui/icons-material";
+import { useEffect } from "react";
+
 function App() {
   const dispatch = useDispatch();
 
@@ -71,7 +72,11 @@ function App() {
       dispatch(clearUserData());
     }
   };
-
+  
+  // Check for existing authentication on component mount
+  useEffect(() => {
+    handleLoginWithToken();
+  }, []);
 
   return (
     <Box>

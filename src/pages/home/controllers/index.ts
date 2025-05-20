@@ -30,7 +30,7 @@ export const useMainControllers = () => {
     first_name: "",
     last_name: "",
     email: "",
-    tel: "",
+    tel: "+85620",
     password: "",
     address: "",
     gender: "",
@@ -92,9 +92,12 @@ export const useMainControllers = () => {
     }
   };
 
-  // Validate form
+  // Enhanced validation function
   const validateForm = () => {
     const newErrors = {};
+    let isValid = true;
+    
+    // Required fields validation
     const requiredFields = [
       "first_name",
       "last_name",
@@ -112,28 +115,45 @@ export const useMainControllers = () => {
     requiredFields.forEach((field) => {
       if (!formData[field]) {
         newErrors[field] = "This field is required";
+        isValid = false;
       }
     });
 
     // Email validation
     if (formData.email && !/\S+@\S+\.\S+/.test(formData.email)) {
       newErrors.email = "Please enter a valid email address";
+      isValid = false;
     }
 
-    if (formData.tel && !/^\+85620\d{8}$/.test(formData.tel.replace(/\s/g, ""))) {
-      newErrors.tel = "Please enter a valid phone number with 8 digits after +85620";
+    // Phone validation - very important
+    if (formData.tel) {
+      const cleanedTel = formData.tel.replace(/\s/g, "");
+      if (!/^\+85620\d{8}$/.test(cleanedTel)) {
+        newErrors.tel = "Please enter a valid phone number with 8 digits after +85620";
+        isValid = false;
+      }
     }
 
     // Password validation
     if (formData.password && formData.password.length < 8) {
       newErrors.password = "Password must be at least 8 characters";
+      isValid = false;
+    }
+
+    // Price validation
+    if (formData.price) {
+      const price = parseInt(formData.price, 10);
+      if (isNaN(price) || price <= 0) {
+        newErrors.price = "Please enter a valid price amount";
+        isValid = false;
+      }
     }
 
     setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    return isValid;
   };
 
-  // Check if form is valid
+  // Check if form is valid (used for enabling/disabling submit button)
   const isFormValid = () => {
     const requiredFields = [
       "first_name",
@@ -149,18 +169,20 @@ export const useMainControllers = () => {
       "cv",
     ];
 
-    return requiredFields.every((field) => !!formData[field]);
+    return requiredFields.every((field) => !!formData[field]) && 
+           formData.tel.length >= 13; // +85620 (6 chars) + 8 digits = 14 chars (or more with spaces)
   };
 
   // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    // Run validation and stop if invalid
     if (!validateForm()) {
       // Show validation error alert
       Swal.fire({
         title: "ຂໍ້ຜິດພາດ!",
-        text: "ກະລຸນາປ້ອນຂໍ້ມູນໃຫ້ຄົບຖ້ວນ",
+        text: "ກະລຸນາປ້ອນຂໍ້ມູນໃຫ້ຄົບຖ້ວນ ແລະ ຖືກຕ້ອງ",
         icon: "error",
         confirmButtonText: "ຕົກລົງ",
         confirmButtonColor: "#611463"
@@ -185,64 +207,80 @@ export const useMainControllers = () => {
       const selectedCategory = categories.find(cat => cat.id === formData.cat_id);
       const categoryName = selectedCategory ? selectedCategory.name : "";
 
-      // Prepare data based on whether we have an image or not
+      // Clean form data - remove whitespace and format properly
+      const cleanedFormData = {
+        first_name: formData.first_name.trim(),
+        last_name: formData.last_name.trim(),
+        email: formData.email.trim(),
+        tel: formData.tel.replace(/\s/g, ""), // Remove any spaces
+        password: formData.password,
+        address: formData.address.trim(),
+        gender: formData.gender,
+        cv: formData.cv.trim(),
+        cat_id: formData.cat_id,
+        cat_name: categoryName,
+        price: formData.price,
+        city: formData.city,
+        status: Status.ACTIVE
+      };
+
+      let response;
+
       if (formData.avatar) {
-        // If we have an image, use FormData for multipart/form-data submission
+        // If we have an image, use FormData approach
         const submitData = new FormData();
-
-        // Add all text fields
-        Object.keys(formData).forEach(key => {
-          if (key !== 'avatar') {
-            submitData.append(key, formData[key]);
-          }
+        
+        // Add all text fields to FormData
+        Object.entries(cleanedFormData).forEach(([key, value]) => {
+          submitData.append(key, value);
         });
-
-        // Add file
+        
+        // Add file last
         submitData.append('avatar', formData.avatar);
 
-        // Add additional fields
-        submitData.append('status', Status.ACTIVE);
-        submitData.append('cat_name', categoryName);
+        // Log what we're sending for debugging
+        console.log("Submitting form with image", {
+          method: "POST",
+          url: "https://homecare-pro.onrender.com/employees/create_employees",
+          contentType: "multipart/form-data",
+          data: Object.fromEntries(submitData.entries())
+        });
 
         // Send with multipart/form-data
-        const response = await axios.post(
+        response = await axios.post(
           "https://homecare-pro.onrender.com/employees/create_employees",
           submitData,
           {
             headers: {
               'Content-Type': 'multipart/form-data'
-            }
+            },
+            timeout: 15000 // Set a reasonable timeout
           }
         );
-
-        console.log("Employee created with image:", response.data);
       } else {
         // If no image, use regular JSON submission
-        const submitData = {
-          ...formData,
-          status: Status.ACTIVE,
-          cat_name: categoryName,
-          // Remove the avatar field if it's null to avoid sending null
-          avatar: undefined
-        };
-
-        // Remove the avatar field completely if it's null to avoid sending null
-        delete submitData.avatar;
+        // Log what we're sending for debugging
+        console.log("Submitting form without image", {
+          method: "POST",
+          url: "https://homecare-pro.onrender.com/employees/create_employees",
+          contentType: "application/json",
+          data: cleanedFormData
+        });
 
         // Send as JSON
-        const response = await axios.post(
+        response = await axios.post(
           "https://homecare-pro.onrender.com/employees/create_employees",
-          submitData,
+          cleanedFormData,
           {
             headers: {
               'Content-Type': 'application/json'
-            }
+            },
+            timeout: 15000 // Set a reasonable timeout
           }
         );
-
-        console.log("Employee created without image:", response.data);
       }
 
+      console.log("API Response:", response.data);
       setSubmitSuccess(true);
 
       // Show success alert
@@ -259,7 +297,7 @@ export const useMainControllers = () => {
         first_name: "",
         last_name: "",
         email: "",
-        tel: "",
+        tel: "+85620",
         password: "",
         address: "",
         gender: "",
@@ -272,6 +310,16 @@ export const useMainControllers = () => {
 
     } catch (error) {
       console.error("Error creating employee:", error);
+      
+      // Detailed error logging for debugging
+      console.error("API Error Details:", {
+        message: error.message,
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        url: error.config?.url,
+        method: error.config?.method
+      });
 
       // Determine error message
       let errorMessage = "ເກີດຂໍ້ຜິດພາດ. ກະລຸນາລອງໃໝ່ອີກຄັ້ງ.";
@@ -280,6 +328,8 @@ export const useMainControllers = () => {
       if (error.response && error.response.data) {
         if (error.response.data.message) {
           errorMessage = error.response.data.message;
+        } else if (typeof error.response.data === 'string' && error.response.data.includes('Internal Server Error')) {
+          errorMessage = "ເກີດຂໍ້ຜິດພາດທາງເຊີບເວີ. ກະລຸນາລອງໃໝ່ອີກຄັ້ງຫຼັງຈາກ.";
         }
       }
 
@@ -314,6 +364,7 @@ export const useMainControllers = () => {
     handleFileChange,
     handleSubmit,
     isFormValid,
+    validateForm,
     cities,
     categories,
     errors,

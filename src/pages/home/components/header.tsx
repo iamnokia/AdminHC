@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
     Box,
     Typography,
@@ -24,6 +24,7 @@ import PersonAddIcon from "@mui/icons-material/PersonAdd";
 import DriveFileRenameOutlineIcon from "@mui/icons-material/DriveFileRenameOutline";
 import AttachMoneyIcon from "@mui/icons-material/AttachMoney";
 import LocationOnIcon from "@mui/icons-material/LocationOn";
+import PhoneIcon from "@mui/icons-material/Phone";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { styled, useTheme } from "@mui/material/styles";
 import useMainControllers from "../controllers/index";
@@ -182,6 +183,69 @@ const ServiceProviderForm = () => {
             avatar: null
         });
     };
+    
+    // Enhanced phone number handler
+    const handlePhoneChange = (e) => {
+        let input = e.target.value;
+        const prefix = "+85620";
+        
+        // If user tries to delete the prefix, maintain it
+        if (input.length < prefix.length) {
+            return;
+        }
+        
+        // Extract only the digits after the prefix
+        const digits = input.substring(prefix.length).replace(/\D/g, "");
+        
+        // Limit to only 8 digits after the prefix
+        const limitedDigits = digits.substring(0, 8);
+        
+        // Format with spaces for readability: +85620 XXXX XXXX
+        let formattedValue = prefix;
+        if (limitedDigits.length > 0) {
+            formattedValue += limitedDigits.substring(0, 4);
+            if (limitedDigits.length > 4) {
+                formattedValue += " " + limitedDigits.substring(4);
+            }
+        }
+        
+        // Update form data
+        handleChange({
+            target: {
+                name: "tel",
+                value: formattedValue
+            }
+        });
+    };
+    
+    // Position cursor correctly on phone input focus
+    const handlePhoneFocus = (e) => {
+        if (e.target.value === "") {
+            handleChange({
+                target: {
+                    name: "tel",
+                    value: "+85620"
+                }
+            });
+        }
+        
+        // Position cursor at the end
+        setTimeout(() => {
+            const len = e.target.value.length;
+            e.target.setSelectionRange(len, len);
+        }, 0);
+    };
+
+    // Clear success message after 5 seconds
+    useEffect(() => {
+        let timer;
+        if (submitSuccess) {
+            timer = setTimeout(() => {
+                setFormData(prev => ({...prev, submitSuccess: false}));
+            }, 5000);
+        }
+        return () => clearTimeout(timer);
+    }, [submitSuccess, setFormData]);
 
     return (
         <Container maxWidth="lg">
@@ -276,51 +340,18 @@ const ServiceProviderForm = () => {
                                     label="ເບີໂທລະສັບ"
                                     name="tel"
                                     value={formData.tel}
-                                    onChange={(e) => {
-                                        const input = e.target.value;
-                                        const prefix = "+85620";
-
-                                        // If user tries to delete the prefix, maintain it
-                                        if (input.length < prefix.length) {
-                                            return;
-                                        }
-
-                                        // Extract only the digits after the prefix
-                                        const digits = input.substring(prefix.length).replace(/\D/g, "");
-
-                                        // Limit to only 8 digits after the prefix
-                                        const limitedDigits = digits.substring(0, 8);
-
-                                        // Set the full value with prefix
-                                        const newValue = prefix + limitedDigits;
-
-                                        // Update form data
-                                        handleChange({
-                                            target: {
-                                                name: "tel",
-                                                value: newValue
-                                            }
-                                        });
-                                    }}
+                                    onChange={handlePhoneChange}
                                     variant="outlined"
                                     placeholder="+8562012345678"
                                     error={!!errors.tel}
-                                    helperText={errors.tel}
-                                    inputProps={{
-                                        // This ensures the cursor is positioned correctly
-                                        onFocus: (e) => {
-                                            if (e.target.value === "") {
-                                                handleChange({
-                                                    target: {
-                                                        name: "tel",
-                                                        value: "+85620"
-                                                    }
-                                                });
-                                            }
-                                            // Position cursor at the end
-                                            const len = e.target.value.length;
-                                            e.target.setSelectionRange(len, len);
-                                        }
+                                    helperText={errors.tel || "Format: +85620 XXXX XXXX (8 digits required)"}
+                                    InputProps={{
+                                        startAdornment: (
+                                            <InputAdornment position="start">
+                                                <PhoneIcon />
+                                            </InputAdornment>
+                                        ),
+                                        onFocus: handlePhoneFocus
                                     }}
                                 />
                             </Grid>
@@ -534,7 +565,7 @@ const ServiceProviderForm = () => {
                     </StyledPaper>
 
                     {/* Submit Button */}
-                    <Box sx={{ mt: 1, mb: 3, display: "flex", justifyContent: "center" }}>
+                    <Box sx={{ mt: 4, mb: 3, display: "flex", justifyContent: "center" }}>
                         <Button
                             type="submit"
                             variant="contained"

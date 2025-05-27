@@ -22,6 +22,7 @@ import {
 } from '@mui/material';
 import {
   Star as StarIcon,
+  StarOutline as StarOutlineIcon,
   LocationOn as LocationIcon,
   Category as CategoryIcon,
   CleaningServices as RepairIcon,
@@ -86,6 +87,7 @@ export interface ServiceProvider {
   city?: string;
   categoryType: string;
   car?: CarModel;
+  actualRating?: number; // Add actual rating field
 }
 
 // Helper function to translate English city names to Lao for display
@@ -156,6 +158,7 @@ const ServiceProviderAdmin: React.FC = () => {
     handleUpdateCar,
     handleUpdateStatus,
     handleDeleteEmployee,
+    getEmployeeRating // Add rating function
   } = useMainController();
 
   // Handle search input change
@@ -782,6 +785,7 @@ const ServiceProviderAdmin: React.FC = () => {
                     provider={provider}
                     onViewDetails={handleViewDetails}
                     onStatusChange={handleProviderStatusChange}
+                    getEmployeeRating={getEmployeeRating} // Pass rating function
                   />
                 </Grid>
               ))
@@ -839,6 +843,7 @@ const ServiceProviderAdmin: React.FC = () => {
           onUpdateCar={handleUpdateCar}
           onDeleteEmployee={handleDeleteProviderAction}
           onSuccess={handleSuccessfulUpdate}
+          getEmployeeRating={getEmployeeRating} // Pass rating function
         />
       )}
 
@@ -862,14 +867,18 @@ const ServiceProviderAdmin: React.FC = () => {
   );
 };
 
-// Service provider card component
+// Service provider card component with dynamic ratings
 const ServiceProviderCard: React.FC<{
   provider: ServiceProvider;
   onViewDetails: (provider: ServiceProvider) => void;
   onStatusChange: (id: number, newStatus: 'active' | 'inactive') => void;
-}> = ({ provider, onViewDetails, onStatusChange }) => {
+  getEmployeeRating: (employeeId: string | number) => number;
+}> = ({ provider, onViewDetails, onStatusChange, getEmployeeRating }) => {
   const isMovingService = provider.cat_id === 5;
   const [status, setStatus] = useState<'active' | 'inactive'>(provider.status as 'active' | 'inactive');
+
+  // Get actual rating for this provider
+  const actualRating = getEmployeeRating(provider.id);
 
   const handleStatusChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const newStatus = event.target.checked ? 'active' : 'inactive';
@@ -877,6 +886,37 @@ const ServiceProviderCard: React.FC<{
     onStatusChange(provider.id, newStatus);
     event.stopPropagation();
   };
+
+  // Helper function to render stars with actual rating
+  const renderStars = () => {
+    const stars = [];
+    for (let i = 1; i <= 5; i++) {
+      stars.push(
+        <Box key={i} sx={{ position: 'relative', display: 'inline-block' }}>
+          {i <= actualRating ? (
+            <StarIcon
+              fontSize="small"
+              sx={{ 
+                color: '#f7931e',
+                filter: 'drop-shadow(0 1px 2px rgba(247, 147, 30, 0.3))'
+              }}
+            />
+          ) : (
+            <StarOutlineIcon
+              fontSize="small"
+              sx={{ 
+                color: '#E0E0E0',
+                opacity: 0.6
+              }}
+            />
+          )}
+        </Box>
+      );
+    }
+    return stars;
+  };
+
+  console.log(`Admin Card - Provider ${provider.id}: ${provider.first_name} ${provider.last_name}, Rating: ${actualRating}`);
 
   return (
     <Card
@@ -957,7 +997,7 @@ const ServiceProviderCard: React.FC<{
           }}
         />
 
-        {/* Rating & price */}
+        {/* Rating & price with actual rating */}
         <Box
           sx={{
             position: 'absolute',
@@ -972,14 +1012,26 @@ const ServiceProviderCard: React.FC<{
             justifyContent: 'space-between'
           }}
         >
-          <Box display="flex" alignItems="center">
-            {[1, 2, 3, 4, 5].map((star) => (
-              <StarIcon
-                key={star}
-                fontSize="small"
-                sx={{ color: '#f7931e' }}
-              />
-            ))}
+          <Box sx={{ 
+            display: 'flex', 
+            alignItems: 'center',
+            background: 'rgba(255, 255, 255, 0.1)',
+            borderRadius: '12px',
+            padding: '2px 6px',
+            border: '1px solid rgba(255, 255, 255, 0.2)'
+          }}>
+            {renderStars()}
+            <Typography 
+              variant="caption" 
+              sx={{ 
+                ml: 0.5, 
+                fontWeight: 'bold', 
+                color: '#fff',
+                fontSize: '0.7rem'
+              }}
+            >
+              {actualRating}/5
+            </Typography>
           </Box>
           <Typography variant="body2" fontWeight="medium">
             {formatPrice(provider.price)}

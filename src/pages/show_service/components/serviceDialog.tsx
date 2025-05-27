@@ -23,6 +23,7 @@ import {
 import {
   Close as CloseIcon,
   Star as StarIcon,
+  StarOutline as StarOutlineIcon,
   LocationOn as LocationIcon,
   Phone as PhoneIcon,
   Email as EmailIcon,
@@ -79,6 +80,7 @@ interface ServiceProviderDetailDialogProps {
   onUpdateCar: (id: number, data: any, imageFile?: File) => Promise<any>;
   onDeleteEmployee: (id: number) => Promise<any>;
   onSuccess: (message: string) => void;
+  getEmployeeRating: (employeeId: string | number) => number; // Add rating function
 }
 
 const ServiceProviderDetailDialog: React.FC<ServiceProviderDetailDialogProps> = ({
@@ -90,7 +92,8 @@ const ServiceProviderDetailDialog: React.FC<ServiceProviderDetailDialogProps> = 
   onUpdateEmployee,
   onUpdateCar,
   onDeleteEmployee,
-  onSuccess
+  onSuccess,
+  getEmployeeRating // Add rating function prop
 }) => {
   const [isEditing, setIsEditing] = useState<boolean>(false);
   const [editedProvider, setEditedProvider] = useState<ServiceProvider | null>(null);
@@ -101,9 +104,42 @@ const ServiceProviderDetailDialog: React.FC<ServiceProviderDetailDialogProps> = 
   const [carImagePreview, setCarImagePreview] = useState<string | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  // Get actual rating for this provider
+  const actualRating = getEmployeeRating ? getEmployeeRating(provider.id) : 5;
+
   // Debug the props
   console.log("Dialog opened with categories:", categories);
   console.log("Provider:", provider);
+  console.log("Provider actual rating:", actualRating);
+
+  // Helper function to render stars with actual rating
+  const renderStars = () => {
+    const stars = [];
+    for (let i = 1; i <= 5; i++) {
+      stars.push(
+        <Box key={i} sx={{ position: 'relative', display: 'inline-block' }}>
+          {i <= actualRating ? (
+            <StarIcon
+              fontSize="small"
+              sx={{ 
+                color: '#f7931e',
+                filter: 'drop-shadow(0 1px 2px rgba(247, 147, 30, 0.3))'
+              }}
+            />
+          ) : (
+            <StarOutlineIcon
+              fontSize="small"
+              sx={{ 
+                color: '#E0E0E0',
+                opacity: 0.6
+              }}
+            />
+          )}
+        </Box>
+      );
+    }
+    return stars;
+  };
 
   // Initialize edited provider when dialog opens
   useEffect(() => {
@@ -577,7 +613,7 @@ const ServiceProviderDetailDialog: React.FC<ServiceProviderDetailDialogProps> = 
                     {editedProvider.first_name} {editedProvider.last_name}
                   </Typography>
                 )}
-                <Box display="flex" alignItems="center" mt={1}>
+                <Box display="flex" alignItems="center" mt={1} flexDirection="column" gap={1}>
                   <Chip
                     icon={getCategoryIcon(editedProvider.cat_name) as React.ReactElement}
                     label={editedProvider.cat_name}
@@ -587,16 +623,27 @@ const ServiceProviderDetailDialog: React.FC<ServiceProviderDetailDialogProps> = 
                       fontWeight: 'bold'
                     }}
                   />
-                  <Box
-                    sx={{
-                      display: 'flex',
-                      ml: 1,
-                      color: '#f7931e'
-                    }}
-                  >
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <StarIcon key={star} fontSize="small" />
-                    ))}
+                  {/* Dynamic star rating display */}
+                  <Box sx={{ 
+                    display: 'flex', 
+                    alignItems: 'center',
+                    background: 'rgba(255, 215, 0, 0.1)',
+                    borderRadius: '12px',
+                    padding: '4px 8px',
+                    border: '1px solid rgba(255, 215, 0, 0.3)'
+                  }}>
+                    {renderStars()}
+                    <Typography 
+                      variant="caption" 
+                      sx={{ 
+                        ml: 0.5, 
+                        fontWeight: 'bold', 
+                        color: '#FF8C00',
+                        fontSize: '0.75rem'
+                      }}
+                    >
+                      {actualRating}/5
+                    </Typography>
                   </Box>
                 </Box>
               </Box>

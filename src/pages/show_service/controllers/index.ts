@@ -4,6 +4,17 @@ import { EmployeeModel } from "../../../models/employee";
 import axios from "axios";
 import { CarModel } from "../../../models/car";
 
+// Define comment model based on the API response
+interface CommentModel {
+  id: number;
+  users_id: number;
+  employees_id: number;
+  rating: number;
+  status: string;
+  created_at: string;
+  updated_at: string;
+}
+
 // Define Category interface
 export interface Category {
   id: number;
@@ -17,12 +28,15 @@ export interface ServiceProvider extends Omit<EmployeeModel, 'price'> {
   price: number;
   categoryType: string;
   car?: CarModel;
+  actualRating?: number; // Add actual rating field
 }
 
 const useMainController = () => {
   const [data, setData] = useState<EmployeeModel[]>([]);
   const [car, setCar] = useState<CarModel[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [comments, setComments] = useState<CommentModel[]>([]);
+  const [employeeRatings, setEmployeeRatings] = useState<Map<string, number>>(new Map());
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
@@ -93,6 +107,69 @@ const useMainController = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  // New function to fetch comments and calculate ratings
+  const handleGetComments = async (): Promise<void> => {
+    try {
+      setLoading(true);
+      const res = await axios.get("https://homecare-pro.onrender.com/comments", {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      const commentsData: CommentModel[] = Array.isArray(res.data) ? res.data : [res.data];
+      setComments(commentsData);
+      
+      // Calculate average ratings for each employee
+      const ratingsMap = calculateEmployeeRatings(commentsData);
+      setEmployeeRatings(ratingsMap);
+      
+      console.log("Admin - Comments fetched:", commentsData);
+      console.log("Admin - Employee ratings calculated:", ratingsMap);
+      
+    } catch (error) {
+      console.error("Error fetching comments:", error);
+      // Set empty map if there's an error
+      setEmployeeRatings(new Map());
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Function to calculate average ratings per employee
+  const calculateEmployeeRatings = (comments: CommentModel[]): Map<string, number> => {
+    const ratingsMap = new Map<string, number>();
+    const employeeStats = new Map<string, { totalRating: number; count: number }>();
+
+    // Filter active comments and group by employee
+    comments
+      .filter(comment => comment.status === 'active' && comment.rating > 0)
+      .forEach(comment => {
+        const employeeId = String(comment.employees_id);
+        const currentStats = employeeStats.get(employeeId) || { totalRating: 0, count: 0 };
+        
+        employeeStats.set(employeeId, {
+          totalRating: currentStats.totalRating + comment.rating,
+          count: currentStats.count + 1
+        });
+      });
+
+    // Calculate average ratings
+    employeeStats.forEach(({ totalRating, count }, employeeId) => {
+      const averageRating = Math.round((totalRating / count) * 10) / 10; // Round to 1 decimal place
+      const starRating = Math.min(5, Math.max(1, Math.round(averageRating))); // Convert to 1-5 star rating
+      ratingsMap.set(employeeId, starRating);
+    });
+
+    return ratingsMap;
+  };
+
+  // Function to get rating for a specific employee
+  const getEmployeeRating = (employeeId: string | number): number => {
+    const rating = employeeRatings.get(String(employeeId));
+    return rating || 5; // Default to 5 stars if no rating found
   };
 
   // Convert image file to base64
@@ -415,23 +492,33 @@ const useMainController = () => {
     return 'other';
   };
 
-  // Combine employee and car data
+  // Combine employee and car data with actual ratings
   const getCombinedData = (): ServiceProvider[] => {
     return data.map(employee => {
       const employeeCar = car.find(c => c.emp_id === employee.id);
+      const actualRating = getEmployeeRating(employee.id);
+      
       return {
         ...employee,
         categoryType: getCategoryType(employee.cat_name),
-        car: employeeCar
+        car: employeeCar,
+        actualRating: actualRating
       };
     });
   };
 
   // Initialize data on component mount
   useEffect(() => {
-    handleGetAllData();
-    handleGetCarByCatId();
-    handleGetCategories();
+    const fetchAllData = async () => {
+      await Promise.all([
+        handleGetAllData(),
+        handleGetCarByCatId(),
+        handleGetCategories(),
+        handleGetComments() // Add comment fetching
+      ]);
+    };
+
+    fetchAllData();
   }, []);
 
   return {
@@ -439,6 +526,9 @@ const useMainController = () => {
     error,
     serviceProviders: getCombinedData(),
     categories, // Explicitly expose categories to components
+    comments,
+    employeeRatings,
+    getEmployeeRating,
     handleNavigate,
     handleUpdateEmployee,
     handleCreateCar,
@@ -446,7 +536,8 @@ const useMainController = () => {
     handleUpdateStatus,
     handleDeleteEmployee,
     handleGetAllData,
-    handleGetCategories
+    handleGetCategories,
+    handleGetComments
   };
 };
 

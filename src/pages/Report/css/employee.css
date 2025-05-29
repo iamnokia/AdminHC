@@ -1,8 +1,24 @@
-/* ServiceProviderReport.css */
+/* ServiceProviderReport.css - Enhanced Version */
+
+/* Import Lao fonts for better text rendering */
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Lao:wght@400;500;700&display=swap');
 
 /* General styles */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: "Noto Sans Lao", "Phetsarath OT", "Saysettha OT", Arial, sans-serif;
+  line-height: 1.6;
+  color: #333;
+}
+
 .service-provider-container {
   padding: 16px;
+  max-width: 1400px;
+  margin: 0 auto;
+  background-color: #fff;
 }
 
 /* Header styles */
@@ -10,131 +26,64 @@
   margin-bottom: 24px;
   font-weight: bold;
   color: #611463;
+  text-align: center;
 }
 
-/* Print-specific styles */
-@media print {
-  /* Hide elements that shouldn't appear in print */
-  .no-print {
-    display: none !important;
-  }
-  
-  /* Show print-only elements */
-  .print-only {
-    display: block !important;
-  }
-  
-  /* Fix chart rendering */
-  .recharts-wrapper,
-  .recharts-surface {
-    width: 100% !important;
-    height: auto !important;
-    page-break-inside: avoid;
-  }
-  
-  /* Ensure colors print correctly */
-  body {
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
-    color-adjust: exact !important;
-  }
-  
-  /* Remove shadows and adjust borders for better printing */
-  .MuiPaper-root {
-    box-shadow: none !important;
-    border: 1px solid #eee;
-  }
-  
-  /* Adjust margins and layout for printing */
-  #service-provider-report-print {
-    padding: 0 !important;
-    margin: 0 !important;
-    width: 100% !important;
-  }
-  
-  /* Fix grid layout for printing */
-  .MuiGrid-root {
-    width: 100% !important;
-    margin: 0 !important;
-  }
-  
-  /* Add page breaks where needed */
-  .page-break {
-    page-break-after: always;
-  }
-  
-  /* Adjust chart margins */
-  .report-chart {
-    margin-bottom: 16px;
-  }
-  
-  /* Header for print version */
-  .print-header {
-    text-align: center;
-    margin-bottom: 24px;
-  }
-  
-  .print-header h1 {
-    font-size: 24px;
-    color: #611463;
-    margin-bottom: 8px;
-  }
-  
-  .print-header p {
-    font-size: 14px;
-    color: #666;
-  }
-  
-  /* Footer for print version */
-  .print-footer {
-    margin-top: 24px;
-    padding-top: 12px;
-    border-top: 1px solid #eee;
-    text-align: center;
-    font-size: 12px;
-    color: #666;
-  }
-  
-  /* Make sure chart legends are visible */
-  .recharts-legend-item-text {
-    color: #333 !important;
-  }
-  
-  /* Ensure grids and axes print properly */
-  .recharts-cartesian-grid-horizontal line,
-  .recharts-cartesian-grid-vertical line,
-  .recharts-cartesian-axis-line {
-    stroke: #ccc !important;
-  }
-  
-  /* Table styling for printing */
-  .MuiTableHead-root {
-    background-color: #f5f5f5 !important;
-  }
-  
-  .MuiTableCell-head {
-    font-weight: bold !important;
-    color: #333 !important;
-  }
-  
-  /* Status badges in print */
-  .status-badge {
-    border: 1px solid #ccc;
-    background-color: #f9f9f9 !important;
-    color: #333 !important;
-  }
-  
-  /* Each table on a new page */
-  .MuiTableContainer-root {
-    page-break-inside: avoid;
-  }
-}
-
-/* Component specific styles */
+/* Filter panel styles */
 .filter-panel {
-  transition: all 0.3s ease;
+  animation: slideDown 0.3s ease-in-out;
 }
 
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Custom scrollbar for better UX */
+.service-provider-container::-webkit-scrollbar {
+  width: 8px;
+}
+
+.service-provider-container::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.service-provider-container::-webkit-scrollbar-thumb {
+  background: #611463;
+  border-radius: 4px;
+}
+
+.service-provider-container::-webkit-scrollbar-thumb:hover {
+  background: #4a0d4c;
+}
+
+/* Button hover effects */
+.MuiButton-root {
+  transition: all 0.2s ease-in-out !important;
+}
+
+.MuiButton-root:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.12) !important;
+}
+
+/* Paper component enhancements */
+.MuiPaper-root {
+  transition: box-shadow 0.2s ease-in-out !important;
+}
+
+.MuiPaper-root:hover {
+  box-shadow: 0 8px 16px rgba(0,0,0,0.12) !important;
+}
+
+/* Status chip styling */
 .status-chip-active {
   background-color: #e6f7ee !important;
   color: #2e7d32 !important;
@@ -150,10 +99,106 @@
   color: #ed6c02 !important;
 }
 
-/* Responsive adjustments for smaller screens */
-@media (max-width: 600px) {
+/* Table enhancements */
+.MuiTableContainer-root {
+  border-radius: 8px !important;
+  overflow: hidden;
+}
+
+.MuiTableHead-root {
+  background: linear-gradient(135deg, #611463 0%, #4a0d4c 100%) !important;
+}
+
+.MuiTableHead-root .MuiTableCell-root {
+  color: white !important;
+  font-weight: bold !important;
+  font-size: 0.875rem !important;
+}
+
+.MuiTableBody-root .MuiTableRow-root:hover {
+  background-color: rgba(97, 20, 99, 0.04) !important;
+}
+
+/* Avatar styling */
+.MuiAvatar-root {
+  border: 2px solid white !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15) !important;
+}
+
+/* Chip styling */
+.MuiChip-root {
+  font-weight: 500 !important;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+}
+
+/* Tab styling */
+.MuiTabs-root {
+  border-bottom: 1px solid #e0e0e0 !important;
+}
+
+.MuiTab-root {
+  font-weight: 500 !important;
+  text-transform: none !important;
+}
+
+/* Chart container */
+.recharts-wrapper {
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+/* Print-specific styles */
+.print-only {
+  display: none;
+}
+
+.print-header {
+  text-align: center;
+  margin-bottom: 30px;
+  padding-bottom: 15px;
+  border-bottom: 2px solid #611463;
+}
+
+.print-header h1 {
+  font-size: 28px;
+  color: #611463;
+  margin-bottom: 8px;
+  font-weight: bold;
+}
+
+.print-header p {
+  font-size: 14px;
+  color: #666;
+  margin: 4px 0;
+}
+
+.print-footer {
+  margin-top: 30px;
+  padding-top: 15px;
+  border-top: 1px solid #ddd;
+  text-align: center;
+  font-size: 12px;
+  color: #666;
+  page-break-inside: avoid;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .service-provider-container {
+    padding: 8px;
+  }
+  
+  .report-title {
+    font-size: 1.5rem;
+  }
+  
+  .MuiGrid-item {
+    padding: 8px !important;
+  }
+  
   .MuiTableCell-root {
     padding: 8px !important;
+    font-size: 0.75rem !important;
   }
   
   .MuiButton-root {
@@ -161,3 +206,426 @@
     font-size: 0.75rem !important;
   }
 }
+
+@media (max-width: 480px) {
+  .service-provider-container {
+    padding: 4px;
+  }
+  
+  .report-title {
+    font-size: 1.25rem;
+  }
+  
+  .MuiTableContainer-root {
+    font-size: 0.7rem;
+  }
+}
+
+/* Print Media Query - Enhanced for Service Provider Report */
+@media print {
+  /* Hide everything by default */
+  body * {
+    visibility: hidden !important;
+  }
+  
+  /* Show only the report container and its children */
+  #service-provider-report-print,
+  #service-provider-report-print * {
+    visibility: visible !important;
+  }
+  
+  /* Position the report container to fill the page */
+  #service-provider-report-print {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    height: auto !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    background: white !important;
+  }
+  
+  /* Hide elements that shouldn't appear in print */
+  .no-print,
+  .no-print * {
+    display: none !important;
+    visibility: hidden !important;
+  }
+  
+  /* Show print-only elements */
+  .print-only {
+    display: block !important;
+    visibility: visible !important;
+  }
+  
+  /* Hide common page elements that might interfere */
+  nav, header, footer, aside,
+  .sidebar, .navigation, .menu, .toolbar,
+  .app-bar, .header, .footer,
+  [class*="sidebar"],
+  [class*="navigation"], 
+  [class*="menu"],
+  [class*="header"],
+  [class*="toolbar"],
+  [class*="navbar"],
+  [class*="topbar"],
+  [class*="breadcrumb"],
+  .MuiAppBar-root,
+  .MuiToolbar-root,
+  .MuiDrawer-root {
+    display: none !important;
+    visibility: hidden !important;
+  }
+  
+  /* Ensure colors print correctly */
+  body {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+    background: white !important;
+  }
+  
+  /* Remove shadows and adjust borders for better printing */
+  .MuiPaper-root {
+    box-shadow: none !important;
+    border: 1px solid #ddd !important;
+    margin-bottom: 16px !important;
+    background: white !important;
+  }
+  
+  /* Adjust margins and layout for printing */
+  .service-provider-container {
+    padding: 20px !important;
+    margin: 0 !important;
+    width: 100% !important;
+    max-width: none !important;
+    background: white !important;
+  }
+  
+  /* Fix grid layout for printing */
+  .MuiGrid-root {
+    width: 100% !important;
+    margin: 0 !important;
+  }
+  
+  .MuiGrid-item {
+    padding: 8px !important;
+  }
+  
+  /* Chart rendering fixes */
+  .recharts-wrapper,
+  .recharts-surface {
+    width: 100% !important;
+    height: auto !important;
+    page-break-inside: avoid;
+  }
+  
+  /* Typography adjustments for print */
+  h1, h2, h3, h4, h5, h6 {
+    color: #611463 !important;
+    page-break-after: avoid;
+    margin-bottom: 8px !important;
+  }
+  
+  p {
+    margin-bottom: 6px !important;
+  }
+  
+  /* Table styling for printing */
+  .MuiTableContainer-root {
+    page-break-inside: avoid;
+    border: 1px solid #ddd !important;
+    margin-bottom: 20px !important;
+  }
+  
+  .MuiTableHead-root {
+    background-color: #f5f5f5 !important;
+    background: #f5f5f5 !important;
+  }
+  
+  .MuiTableHead-root .MuiTableCell-root {
+    font-weight: bold !important;
+    color: #333 !important;
+    background-color: #f5f5f5 !important;
+    border-bottom: 2px solid #ddd !important;
+  }
+  
+  .MuiTableCell-root {
+    border-bottom: 1px solid #eee !important;
+    padding: 8px !important;
+    font-size: 11px !important;
+  }
+  
+  .MuiTableBody-root .MuiTableRow-root:nth-child(even) {
+    background-color: #f9f9f9 !important;
+  }
+  
+  /* Status badges in print */
+  .status-badge,
+  .MuiChip-root {
+    border: 1px solid #ccc !important;
+    background-color: #f9f9f9 !important;
+    color: #333 !important;
+  }
+  
+  /* Avatar styling for print */
+  .MuiAvatar-root {
+    border: 1px solid #ddd !important;
+    background-color: #f5f5f5 !important;
+    color: #333 !important;
+  }
+  
+  /* Make sure chart text is visible */
+  .recharts-legend-item-text,
+  .recharts-text {
+    color: #333 !important;
+    font-size: 11px !important;
+  }
+  
+  /* Ensure grids and axes print properly */
+  .recharts-cartesian-grid-horizontal line,
+  .recharts-cartesian-grid-vertical line,
+  .recharts-cartesian-axis-line {
+    stroke: #ccc !important;
+    stroke-width: 1 !important;
+  }
+  
+  /* Chart tooltips should not appear in print */
+  .recharts-tooltip-wrapper {
+    display: none !important;
+  }
+  
+  /* Fix for Material-UI components in print */
+  .MuiTypography-root {
+    color: inherit !important;
+    margin-bottom: 8px !important;
+  }
+  
+  /* Print header styles */
+  .print-header {
+    text-align: center !important;
+    margin-bottom: 30px !important;
+    padding-bottom: 15px !important;
+    border-bottom: 2px solid #611463 !important;
+    page-break-after: avoid !important;
+  }
+  
+  .print-header h1 {
+    font-size: 28px !important;
+    color: #611463 !important;
+    margin-bottom: 8px !important;
+    font-weight: bold !important;
+  }
+  
+  .print-header p {
+    font-size: 14px !important;
+    color: #666 !important;
+    margin: 4px 0 !important;
+  }
+  
+  /* Print footer styles */
+  .print-footer {
+    margin-top: 30px !important;
+    padding-top: 15px !important;
+    border-top: 1px solid #ddd !important;
+    text-align: center !important;
+    font-size: 12px !important;
+    color: #666 !important;
+    page-break-inside: avoid !important;
+  }
+  
+  /* Avoid page breaks in important sections */
+  .provider-section,
+  .chart-section,
+  .stats-section {
+    page-break-inside: avoid !important;
+  }
+  
+  /* Force page breaks where needed */
+  .page-break {
+    page-break-after: always !important;
+  }
+  
+  /* Remove margins from page */
+  @page {
+    margin: 0.5in !important;
+    size: A4 !important;
+  }
+  
+  /* Specific fixes for Recharts in print */
+  .recharts-surface {
+    background: white !important;
+  }
+  
+  .recharts-bar,
+  .recharts-line {
+    opacity: 1 !important;
+  }
+  
+  /* Text color fixes for print */
+  .MuiTypography-h3,
+  .MuiTypography-h4,
+  .MuiTypography-h5,
+  .MuiTypography-h6 {
+    color: #611463 !important;
+  }
+  
+  .MuiTypography-body1,
+  .MuiTypography-body2 {
+    color: #333 !important;
+  }
+  
+  /* Divider styling for print */
+  .MuiDivider-root {
+    border-color: #ddd !important;
+    margin: 16px 0 !important;
+  }
+  
+  /* Button and interactive elements should be hidden in print */
+  button,
+  .MuiButton-root,
+  .MuiIconButton-root,
+  input,
+  select,
+  textarea {
+    display: none !important;
+  }
+  
+  /* Ensure proper spacing */
+  .MuiBox-root {
+    margin-bottom: 8px !important;
+  }
+  
+  /* Fix for any remaining layout issues */
+  .MuiContainer-root {
+    max-width: none !important;
+    padding: 0 !important;
+  }
+  
+  /* Tab content should be visible */
+  .MuiTabPanel-root {
+    padding: 0 !important;
+  }
+  
+  /* Collapse/Expand sections should be fully expanded in print */
+  .MuiCollapse-root {
+    height: auto !important;
+  }
+  
+  .MuiCollapse-wrapperInner {
+    height: auto !important;
+  }
+}
+
+/* Dark mode support (optional) */
+@media (prefers-color-scheme: dark) {
+  .service-provider-container {
+    background-color: #1a1a1a;
+    color: #e0e0e0;
+  }
+  
+  .MuiPaper-root {
+    background-color: #2d2d2d !important;
+    color: #e0e0e0 !important;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .service-provider-container {
+    border: 2px solid #000;
+  }
+  
+  .MuiPaper-root {
+    border: 2px solid #000 !important;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* RTL support for Lao text if needed */
+.lao-text {
+  direction: ltr;
+  text-align: left;
+}
+
+/* Custom utility classes */
+.text-center {
+  text-align: center;
+}
+
+.text-right {
+  text-align: right;
+}
+
+.mb-0 { margin-bottom: 0 !important; }
+.mb-1 { margin-bottom: 8px !important; }
+.mb-2 { margin-bottom: 16px !important; }
+.mb-3 { margin-bottom: 24px !important; }
+
+.font-bold {
+  font-weight: bold;
+}
+
+.text-primary {
+  color: #611463 !important;
+}
+
+.text-secondary {
+  color: #f7981e !important;
+}
+
+.text-muted {
+  color: #666 !important;
+}
+
+/* Loading and error states */
+.loading-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 200px;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.error-container {
+  text-align: center;
+  padding: 32px;
+  border: 2px dashed #f44336;
+  border-radius: 8px;
+  background-color: #ffebee;
+  margin: 16px 0;
+}
+
+/* Enhanced table styling for better readability */
+.provider-table {
+  width: 100%;
+}
+
+.provider-table .MuiTableHead-root {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.provider-table .expanded-row {
+  background-color: #f8f9fa !important;
+}
+
+/* Category chip colors */
+.category-chip-cleaning { background-color: #2196f3 !important; color: white !important; }
+.category-chip-electrical { background-color: #ff9800 !important; color: white !important; }
+.category-chip-aircon { background-color: #4caf50 !important; color: white !important; }
+.category-chip-plumbing { background-color: #9c27b0 !important; color: white !important; }
+.category-chip-moving { background-color: #f7981e !important; color: white !important; }
+.category-chip-septic { background-color: #795548 !important; color: white !important; }
+.category-chip-pest { background-color: #607d8b !important; color: white !important; }

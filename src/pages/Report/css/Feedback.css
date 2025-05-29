@@ -1,223 +1,655 @@
-/* FeedbackReport.css - Extreme optimization for single-page printing */
+/* Enhanced Feedback.css - Complete Fixed Version */
+
+/* Import Lao fonts for better text rendering */
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Lao:wght@400;500;700&display=swap');
 
 /* General styles */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: "Noto Sans Lao", "Phetsarath OT", "Saysettha OT", Arial, sans-serif;
+  line-height: 1.6;
+  color: #333;
+}
+
 .feedback-report-container {
   padding: 16px;
+  max-width: 1200px;
+  margin: 0 auto;
+  background-color: #fff;
 }
 
 /* Header styles */
 .report-title {
-  margin-bottom: 16px;
+  margin-bottom: 24px;
   font-weight: bold;
   color: #611463;
+  text-align: center;
+}
+
+/* Filter panel styles */
+.filter-panel {
+  animation: slideDown 0.3s ease-in-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* Chart styles */
 .report-chart {
-  margin-bottom: 12px;
+  margin-bottom: 16px;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+/* Custom scrollbar for better UX */
+.feedback-report-container::-webkit-scrollbar {
+  width: 8px;
+}
+
+.feedback-report-container::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.feedback-report-container::-webkit-scrollbar-thumb {
+  background: #611463;
+  border-radius: 4px;
+}
+
+.feedback-report-container::-webkit-scrollbar-thumb:hover {
+  background: #4a0d4c;
+}
+
+/* Button hover effects */
+.MuiButton-root {
+  transition: all 0.2s ease-in-out !important;
+}
+
+.MuiButton-root:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.12) !important;
+}
+
+/* Paper component enhancements */
+.MuiPaper-root {
+  transition: box-shadow 0.2s ease-in-out !important;
+}
+
+.MuiPaper-root:hover {
+  box-shadow: 0 8px 16px rgba(0,0,0,0.12) !important;
+}
+
+/* Card enhancements */
+.MuiCard-root {
+  transition: transform 0.2s ease-in-out !important;
+}
+
+.MuiCard-root:hover {
+  transform: translateY(-2px);
+}
+
+/* Loading and error states */
+.loading-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 200px;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.error-container {
+  text-align: center;
+  padding: 32px;
+  border: 2px dashed #f44336;
+  border-radius: 8px;
+  background-color: #ffebee;
+  margin: 16px 0;
 }
 
 /* Print-specific styles */
+.print-only {
+  display: none;
+}
+
+.print-header {
+  text-align: center;
+  margin-bottom: 30px;
+  padding-bottom: 15px;
+  border-bottom: 2px solid #611463;
+}
+
+.print-header h1 {
+  font-size: 28px;
+  color: #611463;
+  margin-bottom: 8px;
+  font-weight: bold;
+}
+
+.print-header p {
+  font-size: 14px;
+  color: #666;
+  margin: 4px 0;
+}
+
+.print-footer {
+  margin-top: 30px;
+  padding-top: 15px;
+  border-top: 1px solid #ddd;
+  text-align: center;
+  font-size: 12px;
+  color: #666;
+  page-break-inside: avoid;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .feedback-report-container {
+    padding: 8px;
+  }
+  
+  .report-title {
+    font-size: 1.5rem;
+  }
+  
+  .MuiGrid-item {
+    padding: 8px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .feedback-report-container {
+    padding: 4px;
+  }
+  
+  .report-title {
+    font-size: 1.25rem;
+  }
+}
+
+/* Enhanced Print Media Query - Following Payment Report Pattern */
 @media print {
-  /* Page setup for single page */
-  @page {
-    size: portrait;
-    margin: 0.3cm; /* Extremely small margins */
+  /* Hide everything by default */
+  body * {
+    visibility: hidden !important;
+  }
+  
+  /* Show only the report container and its children */
+  #feedback-report-print,
+  #feedback-report-print * {
+    visibility: visible !important;
+  }
+  
+  /* Position the report container to fill the page */
+  #feedback-report-print {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    height: auto !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    background: white !important;
   }
   
   /* Hide elements that shouldn't appear in print */
-  .no-print {
+  .no-print,
+  .no-print * {
     display: none !important;
+    visibility: hidden !important;
   }
-
+  
   /* Show print-only elements */
   .print-only {
     display: block !important;
+    visibility: visible !important;
   }
-
-  /* Reduce overall font size for print */
+  
+  /* Hide common page elements that might interfere */
+  nav, header, footer, aside,
+  .sidebar, .navigation, .menu, .toolbar,
+  .app-bar, .header, .footer,
+  [class*="sidebar"],
+  [class*="navigation"], 
+  [class*="menu"],
+  [class*="header"],
+  [class*="toolbar"],
+  [class*="navbar"],
+  [class*="topbar"],
+  [class*="breadcrumb"],
+  .MuiAppBar-root,
+  .MuiToolbar-root,
+  .MuiDrawer-root {
+    display: none !important;
+    visibility: hidden !important;
+  }
+  
+  /* Ensure colors print correctly */
   body {
-    font-size: 9px !important; /* Even smaller base font */
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
     color-adjust: exact !important;
+    background: white !important;
+    font-size: 12px !important;
   }
-
-  /* Condense headings */
-  h1, h2, h3, h4, h5, h6, 
-  .MuiTypography-h4, 
-  .MuiTypography-h5, 
-  .MuiTypography-h6,
-  .MuiTypography-subtitle1 {
-    margin-top: 4px !important;
-    margin-bottom: 4px !important;
-    font-size: 80% !important;
-  }
-
-  /* Extremely compact header */
-  .print-header {
-    margin-bottom: 6px;
-  }
-
-  .print-header h1 {
-    font-size: 14px;
-    margin-bottom: 2px;
-  }
-
-  .print-header p {
-    font-size: 10px;
-    margin: 0;
-  }
-
-  /* Ultra-compact footer */
-  .print-footer {
-    margin-top: 4px;
-    padding-top: 2px;
-    font-size: 8px;
-  }
-
-  /* Extreme pie chart optimization */
-  .recharts-wrapper,
-  .recharts-surface {
-    width: 100% !important;
-    height: 140px !important; /* Fixed, shorter height */
-    page-break-inside: avoid;
-  }
-
-  /* Scale charts down more aggressively */
-  .report-chart {
-    transform: scale(0.75);
-    transform-origin: top left;
-    margin-bottom: 0 !important;
-    height: 140px !important;
-    overflow: hidden !important;
-  }
-
-  /* Fix legend display */
-  .recharts-legend-wrapper {
-    bottom: 0 !important;
-    font-size: 8px !important;
-  }
-
-  /* Extremely compact paper elements */
+  
+  /* Remove shadows and adjust borders for better printing */
   .MuiPaper-root {
     box-shadow: none !important;
-    border: 1px solid #eee;
-    padding: 4px !important; /* Minimal padding */
-    margin-bottom: 6px !important;
+    border: 1px solid #ddd !important;
+    margin-bottom: 16px !important;
+    background: white !important;
+    padding: 16px !important;
   }
-
-  /* Critical: reduce the size of the whole container */
+  
+  /* Adjust margins and layout for printing */
   .feedback-report-container {
-    padding: 0 !important;
+    padding: 20px !important;
     margin: 0 !important;
     width: 100% !important;
-    transform: scale(0.95);
-    transform-origin: top center;
+    max-width: none !important;
+    background: white !important;
   }
-
-  /* Tighter grid spacing */
-  .MuiGrid-container {
-    margin-top: 0 !important;
-    margin-bottom: 0 !important;
-  }
-
-  .MuiGrid-item {
-    padding: 3px !important; /* Ultra-compact grid items */
-  }
-
+  
   /* Fix grid layout for printing */
   .MuiGrid-root {
     width: 100% !important;
     margin: 0 !important;
   }
-
-  /* Make metrics section ultra-compact */
-  .MuiGrid-item .MuiBox-root {
-    text-align: center;
-    padding: 0 !important; 
-    margin: 0 !important;
-  }
-
-  /* Smaller statistics text */
-  .MuiTypography-h4 {
-    font-size: 14px !important;
-    line-height: 1 !important;
-    margin: 0 !important;
-  }
-
-  .MuiTypography-body2 {
-    font-size: 8px !important;
-    line-height: 1 !important;
-    margin: 0 !important;
-  }
-
-  /* Ultra-thin dividers */
-  .MuiDivider-root {
-    margin-top: 4px !important;
-    margin-bottom: 4px !important;
-  }
-
-  /* Minimal comment boxes */
-  .MuiBox-root[style*="borderLeft"] {
-    padding: 2px 4px !important;
-    margin-bottom: 4px !important;
-    border-left-width: 2px !important;
-  }
-
-  /* Severely truncate comments */
-  .MuiBox-root[style*="borderLeft"] .MuiTypography-body2 {
-    max-height: 1.2em !important; /* Only show 1 line */
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
-    display: -webkit-box !important;
-    -webkit-line-clamp: 1 !important; /* Show only 1 line */
-    -webkit-box-orient: vertical !important;
-    white-space: nowrap !important;
-    font-size: 8px !important;
-  }
-
-  /* Force comments container smaller */
-  .MuiBox-root[style*="maxHeight"] {
-    max-height: 110px !important; /* Much shorter comments section */
-  }
-
-  /* Show up to 2 comments maximum */
-  .MuiBox-root[style*="maxHeight"] .MuiBox-root[style*="borderLeft"]:nth-child(n+3) {
-    display: none !important;
-  }
-
-  /* Make sure scrollbars don't show on print */
-  .MuiBox-root[style*="overflow: auto"] {
-    overflow: visible !important;
-  }
-
-  /* Ultra-tiny chart labels */
-  .recharts-pie-label-text {
-    font-size: 8px !important;
-  }
-
-  .recharts-layer text {
-    font-size: 7px !important;
+  
+  .MuiGrid-item {
+    padding: 8px !important;
   }
   
-  .recharts-legend-item-text {
-    color: #333 !important;
-    font-size: 8px !important;
+  /* Chart rendering fixes */
+  .recharts-wrapper,
+  .recharts-surface {
+    width: 100% !important;
+    height: 300px !important;
+    max-height: 300px !important;
+    page-break-inside: avoid;
   }
-
-  /* Ensure PieChart cells print with correct colors */
+  
+  .report-chart {
+    margin-bottom: 12px !important;
+    page-break-inside: avoid;
+    overflow: visible !important;
+  }
+  
+  /* Typography adjustments for print */
+  h1, h2, h3, h4, h5, h6 {
+    color: #611463 !important;
+    page-break-after: avoid;
+    margin-bottom: 8px !important;
+  }
+  
+  .MuiTypography-h5 {
+    font-size: 22px !important;
+    margin-bottom: 12px !important;
+  }
+  
+  .MuiTypography-h6 {
+    font-size: 18px !important;
+    margin-bottom: 12px !important;
+  }
+  
+  .MuiTypography-subtitle1 {
+    font-size: 16px !important;
+    margin-bottom: 8px !important;
+    font-weight: bold !important;
+  }
+  
+  p {
+    margin-bottom: 6px !important;
+  }
+  
+  /* Make sure chart colors print properly */
+  .recharts-pie-sector {
+    print-color-adjust: exact !important;
+    -webkit-print-color-adjust: exact !important;
+  }
+  
+  /* Pie chart cell colors */
   .recharts-layer .recharts-sector {
     stroke: none !important;
   }
-
-  /* Hide chart labels if necessary */
-  .recharts-pie-label-line {
+  
+  /* Make sure chart text is visible */
+  .recharts-legend-item-text,
+  .recharts-text,
+  .recharts-pie-label-text {
+    color: #333 !important;
+    font-size: 12px !important;
+  }
+  
+  /* Chart legend adjustments */
+  .recharts-legend-wrapper {
+    margin-bottom: 8px !important;
+  }
+  
+  .recharts-legend {
+    font-size: 11px !important;
+  }
+  
+  /* Fix for Material-UI components in print */
+  .MuiTypography-root {
+    color: inherit !important;
+    margin-bottom: 8px !important;
+  }
+  
+  .MuiTypography-h4 {
+    font-size: 24px !important;
+    line-height: 1.2 !important;
+    margin-bottom: 4px !important;
+  }
+  
+  .MuiTypography-body2 {
+    font-size: 12px !important;
+    margin-bottom: 4px !important;
+  }
+  
+  .MuiTypography-caption {
+    font-size: 10px !important;
+    line-height: 1.2 !important;
+  }
+  
+  /* Print header styles */
+  .print-header {
+    text-align: center !important;
+    margin-bottom: 30px !important;
+    padding-bottom: 15px !important;
+    border-bottom: 2px solid #611463 !important;
+    page-break-after: avoid !important;
+  }
+  
+  .print-header h1 {
+    font-size: 28px !important;
+    color: #611463 !important;
+    margin-bottom: 8px !important;
+    font-weight: bold !important;
+  }
+  
+  .print-header p {
+    font-size: 14px !important;
+    color: #666 !important;
+    margin: 4px 0 !important;
+  }
+  
+  /* Print footer styles */
+  .print-footer {
+    margin-top: 30px !important;
+    padding-top: 15px !important;
+    border-top: 1px solid #ddd !important;
+    text-align: center !important;
+    font-size: 12px !important;
+    color: #666 !important;
+    page-break-inside: avoid !important;
+  }
+  
+  /* Comments section styling for print */
+  .MuiBox-root[style*="borderLeft"] {
+    padding: 8px !important;
+    margin-bottom: 8px !important;
+    border-left-width: 3px !important;
+    page-break-inside: avoid;
+  }
+  
+  .MuiBox-root[style*="maxHeight"] {
+    max-height: none !important;
+    overflow: visible !important;
+  }
+  
+  /* Divider styling */
+  .MuiDivider-root {
+    margin: 16px 0 !important;
+    border-color: #ddd !important;
+  }
+  
+  /* Button and interactive elements should be hidden in print */
+  button,
+  .MuiButton-root,
+  .MuiIconButton-root,
+  input,
+  select,
+  textarea,
+  .MuiTextField-root,
+  .MuiFormControl-root {
+    display: none !important;
+    visibility: hidden !important;
+  }
+  
+  /* Ensure proper spacing */
+  .MuiBox-root {
+    margin-bottom: 8px !important;
+  }
+  
+  /* Fix for any remaining layout issues */
+  .MuiContainer-root {
+    max-width: none !important;
+    padding: 0 !important;
+  }
+  
+  /* Avoid page breaks in important sections */
+  .feedback-section,
+  .chart-section,
+  .summary-section {
+    page-break-inside: avoid !important;
+  }
+  
+  /* Remove margins from page */
+  @page {
+    margin: 0.5in !important;
+    size: A4 !important;
+  }
+  
+  /* Pie chart specific fixes */
+  .recharts-pie-sector path {
+    stroke: none !important;
+  }
+  
+  /* Make sure the chart container is properly sized */
+  .recharts-responsive-container {
+    width: 100% !important;
+    height: 300px !important;
+  }
+  
+  /* Metrics section styling */
+  .MuiGrid-container .MuiGrid-item .MuiBox-root {
+    text-align: center !important;
+    padding: 8px !important;
+    margin: 0 !important;
+  }
+  
+  /* Comments styling improvements */
+  .MuiBox-root .MuiTypography-body2 {
+    font-size: 11px !important;
+    line-height: 1.4 !important;
+    margin-bottom: 4px !important;
+  }
+  
+  .MuiBox-root .MuiTypography-caption {
+    font-size: 10px !important;
+    line-height: 1.2 !important;
+  }
+  
+  /* Force single page layout */
+  html, body {
+    height: auto !important;
+    overflow: visible !important;
+  }
+  
+  /* Chart tooltip should not appear in print */
+  .recharts-tooltip-wrapper {
     display: none !important;
   }
   
-  /* Simplify the pie chart labels to just percentages */
-  .recharts-pie-label-text tspan:first-child {
-    display: none !important;
+  /* Make sure text colors are readable */
+  .MuiTypography-body1,
+  .MuiTypography-body2,
+  .MuiTypography-caption {
+    color: #333 !important;
   }
+  
+  /* Final layout adjustments */
+  .feedback-report-container > .MuiGrid-container {
+    margin: 0 !important;
+    width: 100% !important;
+  }
+  
+  /* Ensure charts don't break across pages */
+  .MuiPaper-root:has(.report-chart) {
+    page-break-inside: avoid !important;
+  }
+  
+  /* Force colors in pie chart */
+  .recharts-pie .recharts-sector {
+    opacity: 1 !important;
+  }
+  
+  /* Make sure the chart has background */
+  .recharts-surface {
+    background: white !important;
+  }
+  
+  /* Grid layout fixes for print */
+  .MuiGrid-root.MuiGrid-container {
+    width: 100% !important;
+    margin: 0 !important;
+  }
+  
+  .MuiGrid-root.MuiGrid-item {
+    flex-basis: auto !important;
+    max-width: none !important;
+  }
+  
+  /* Specific grid item sizing for print */
+  .MuiGrid-root.MuiGrid-item.MuiGrid-grid-xs-12.MuiGrid-grid-md-5 {
+    width: 40% !important;
+    float: left !important;
+  }
+  
+  .MuiGrid-root.MuiGrid-item.MuiGrid-grid-xs-12.MuiGrid-grid-md-7 {
+    width: 58% !important;
+    float: right !important;
+  }
+  
+  /* Clear floats */
+  .MuiGrid-root.MuiGrid-container::after {
+    content: "";
+    display: table;
+    clear: both;
+  }
+  
+  /* Comments border colors should print */
+  .MuiBox-root[style*="border-left: 4px solid"] {
+    border-left: 4px solid #611463 !important;
+  }
+  
+  /* Ensure background colors print for comments */
+  .MuiBox-root[style*="background-color"] {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  
+  /* Make sure all charts are visible */
+  .recharts-wrapper {
+    overflow: visible !important;
+  }
+  
+  /* Final text adjustments */
+  .MuiTypography-root.MuiTypography-body2 {
+    color: #333 !important;
+    font-size: 11px !important;
+    line-height: 1.3 !important;
+  }
+  
+  .MuiTypography-root.MuiTypography-caption {
+    color: #666 !important;
+    font-size: 9px !important;
+  }
+  
+  /* Ensure proper print visibility hierarchy */
+  #feedback-report-print * {
+    position: static !important;
+  }
+}
+
+/* Dark mode support (optional) */
+@media (prefers-color-scheme: dark) {
+  .feedback-report-container {
+    background-color: #1a1a1a;
+    color: #e0e0e0;
+  }
+  
+  .MuiPaper-root {
+    background-color: #2d2d2d !important;
+    color: #e0e0e0 !important;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .feedback-report-container {
+    border: 2px solid #000;
+  }
+  
+  .MuiPaper-root {
+    border: 2px solid #000 !important;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* RTL support for Lao text if needed */
+.lao-text {
+  direction: ltr;
+  text-align: left;
+}
+
+/* Custom utility classes */
+.text-center {
+  text-align: center;
+}
+
+.text-right {
+  text-align: right;
+}
+
+.mb-0 { margin-bottom: 0 !important; }
+.mb-1 { margin-bottom: 8px !important; }
+.mb-2 { margin-bottom: 16px !important; }
+.mb-3 { margin-bottom: 24px !important; }
+
+.font-bold {
+  font-weight: bold;
+}
+
+.text-primary {
+  color: #611463 !important;
+}
+
+.text-secondary {
+  color: #f7981e !important;
+}
+
+.text-muted {
+  color: #666 !important;
 }

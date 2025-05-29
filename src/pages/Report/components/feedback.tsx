@@ -197,8 +197,9 @@ const FeedbackReport: React.FC = () => {
     <div className="print-header print-only" style={{ display: 'none' }}>
       <h1>ລາຍງານການໃຫ້ຄຳເຫັນ</h1>
       {filterParams.startDate && filterParams.endDate && (
-        <p>ໄລຍະເວລາ: {filterParams.startDate} - {filterParams.endDate}</p>
+        <p>ໄລຍະເວລາ: {filterParams.startDate} ເຖິງ {filterParams.endDate}</p>
       )}
+      <p>ສ້າງເມື່ອ: {new Date().toLocaleDateString('lo-LA')} {new Date().toLocaleTimeString('lo-LA')}</p>
     </div>
   );
 
@@ -315,13 +316,14 @@ const FeedbackReport: React.FC = () => {
   // Print footer component - only visible when printing
   const PrintFooter = () => (
     <div className="print-footer print-only" style={{ display: 'none' }}>
-          ພິມວັນທີ: {new Date().toLocaleDateString()} {new Date().toLocaleTimeString()}
+      <p>ພິມວັນທີ: {new Date().toLocaleDateString('lo-LA')} {new Date().toLocaleTimeString('lo-LA')}</p>
+      <p>ລາຍງານສ້າງໂດຍລະບົບການຈັດການບໍລິການ HomeCare</p>
     </div>
   );
 
   return (
     <Box className="feedback-report-container" id="feedback-report-print">
-      <Typography variant="h6" mb={3} fontWeight="bold" color="#611463" className="report-title no-print">
+      <Typography variant="h5" mb={3} fontWeight="bold" color="#611463" className="report-title no-print">
         ລາຍງານການໃຫ້ຄຳເຫັນ
       </Typography>
       
@@ -331,11 +333,22 @@ const FeedbackReport: React.FC = () => {
       
       {loading ? (
         <Box sx={{ display: 'flex', justifyContent: 'center', my: 8 }}>
-          <CircularProgress sx={{ color: '#611463' }} />
+          <CircularProgress sx={{ color: '#611463' }} size={60} />
+          <Box sx={{ ml: 2, display: 'flex', alignItems: 'center' }}>
+            <Typography color="#611463">ກຳລັງໂຫຼດຂໍ້ມູນ...</Typography>
+          </Box>
         </Box>
       ) : error ? (
-        <Box sx={{ textAlign: 'center', my: 4, color: 'error.main' }}>
-          <Typography>{error}</Typography>
+        <Box sx={{ 
+          textAlign: 'center', 
+          my: 4, 
+          p: 3, 
+          border: '1px solid #f44336',
+          borderRadius: 2,
+          bgcolor: '#ffebee'
+        }}>
+          <Typography color="error.main" variant="h6" mb={1}>ເກີດຂໍ້ຜິດພາດ</Typography>
+          <Typography color="error.main">{error}</Typography>
         </Box>
       ) : (
         <Grid container spacing={3}>

@@ -33,7 +33,7 @@ import {
 } from '@mui/icons-material';
 
 import { useServiceHistoryController } from '../controllers/history';
-import '../css/history.css'; // Import the flexible CSS
+import '../css/history.css';
 
 // Color configurations
 const COLORS = ['#611463', '#f7981e', '#8e44ad', '#16a085', '#e67e22', '#3498db', '#e74c3c'];
@@ -206,8 +206,9 @@ const ServiceHistoryReport: React.FC = () => {
     <div className="print-header print-only" style={{ display: 'none' }}>
       <h1>ຂໍ້ມູນປະຫວັດການບໍລິການ</h1>
       {filterParams.startDate && filterParams.endDate && (
-        <p>ໄລຍະເວລາ: {filterParams.startDate} - {filterParams.endDate}</p>
+        <p>ໄລຍະເວລາ: {filterParams.startDate} ເຖິງ {filterParams.endDate}</p>
       )}
+      <p>ສ້າງເມື່ອ: {new Date().toLocaleDateString('lo-LA')} {new Date().toLocaleTimeString('lo-LA')}</p>
     </div>
   );
   
@@ -215,24 +216,43 @@ const ServiceHistoryReport: React.FC = () => {
   const ServiceHistoryTable = () => {
     if (loading) {
       return (
-        <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
-          <CircularProgress sx={{ color: '#611463' }} />
+        <Box sx={{ display: 'flex', justifyContent: 'center', my: 8 }}>
+          <CircularProgress sx={{ color: '#611463' }} size={60} />
+          <Box sx={{ ml: 2, display: 'flex', alignItems: 'center' }}>
+            <Typography color="#611463">ກຳລັງໂຫຼດຂໍ້ມູນ...</Typography>
+          </Box>
         </Box>
       );
     }
     
     if (error) {
       return (
-        <Box sx={{ textAlign: 'center', py: 2, color: 'error.main' }}>
-          <Typography variant="caption">{error}</Typography>
+        <Box sx={{ 
+          textAlign: 'center', 
+          my: 4, 
+          p: 3, 
+          border: '1px solid #f44336',
+          borderRadius: 2,
+          bgcolor: '#ffebee'
+        }}>
+          <Typography color="error.main" variant="h6" mb={1}>ເກີດຂໍ້ຜິດພາດ</Typography>
+          <Typography color="error.main">{error}</Typography>
         </Box>
       );
     }
     
     if (serviceOrders.length === 0) {
       return (
-        <Box sx={{ textAlign: 'center', py: 2, color: 'text.secondary' }}>
-          <Typography variant="caption">ບໍ່ພົບຂໍ້ມູນສຳລັບການຄົ້ນຫາປະຈຸບັນ</Typography>
+        <Box sx={{ 
+          textAlign: 'center', 
+          my: 4, 
+          p: 3, 
+          color: 'text.secondary',
+          border: '1px solid #e0e0e0',
+          borderRadius: 2
+        }}>
+          <Typography variant="h6" mb={1}>ບໍ່ພົບຂໍ້ມູນ</Typography>
+          <Typography variant="body2">ບໍ່ພົບຂໍ້ມູນສຳລັບການຄົ້ນຫາປະຈຸບັນ</Typography>
         </Box>
       );
     }
@@ -242,18 +262,21 @@ const ServiceHistoryReport: React.FC = () => {
         <Box sx={{ overflowX: 'auto' }} className="avoid-break">
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
-              <tr style={{ borderBottom: '1px solid #e0e0e0' }}>
-                <th style={{ padding: '12px 16px', textAlign: 'left' }}>ວັນທີ</th>
-                <th style={{ padding: '12px 16px', textAlign: 'left' }}>ປະເພດການບໍລິການ</th>
-                <th style={{ padding: '12px 16px', textAlign: 'left' }}>ລາຍຊື່ຜູ້ໃຫ້ບໍລິການ</th>
-                <th style={{ padding: '12px 16px', textAlign: 'left' }}>ສະຖານະ</th>
-                <th style={{ padding: '12px 16px', textAlign: 'left' }}>ຈຳນວນເງີນ</th>
+              <tr style={{ borderBottom: '2px solid #611463', backgroundColor: '#f5f5f5' }}>
+                <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 'bold', color: '#611463' }}>ວັນທີ</th>
+                <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 'bold', color: '#611463' }}>ປະເພດການບໍລິການ</th>
+                <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 'bold', color: '#611463' }}>ລາຍຊື່ຜູ້ໃຫ້ບໍລິການ</th>
+                <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 'bold', color: '#611463' }}>ສະຖານະ</th>
+                <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 'bold', color: '#611463' }}>ຈຳນວນເງິນ</th>
               </tr>
             </thead>
             <tbody>
               {serviceOrders.map((order, index) => {
                 return (
-                  <tr key={index} style={{ borderBottom: '1px solid #f0f0f0' }}>
+                  <tr key={index} style={{ 
+                    borderBottom: '1px solid #f0f0f0',
+                    backgroundColor: index % 2 === 0 ? '#fff' : '#fafafa'
+                  }}>
                     <td style={{ padding: '12px 16px' }}>{order.date}</td>
                     <td style={{ padding: '12px 16px' }}>{order.service}</td>
                     <td style={{ padding: '12px 16px' }}>{order.provider}</td>
@@ -264,12 +287,14 @@ const ServiceHistoryReport: React.FC = () => {
                         py: 0.5,
                         borderRadius: 1,
                         bgcolor: order.statusColor.bg,
-                        color: order.statusColor.text
+                        color: order.statusColor.text,
+                        fontSize: '0.875rem',
+                        fontWeight: 'bold'
                       }}>
                         {order.status}
                       </Box>
                     </td>
-                    <td style={{ padding: '12px 16px', textAlign: 'right' }}>{order.amount}</td>
+                    <td style={{ padding: '12px 16px', textAlign: 'right', fontWeight: 'bold' }}>{order.amount}</td>
                   </tr>
                 );
               })}
@@ -277,7 +302,7 @@ const ServiceHistoryReport: React.FC = () => {
           </table>
         </Box>
         
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 2 }} className="pagination-container">
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 2 }} className="pagination-container no-print">
           <Typography variant="body2" color="text.secondary">
             ສະແດງ {serviceOrders.length} ຈາກ {totalCount} ລາຍການ
           </Typography>
@@ -402,15 +427,21 @@ const ServiceHistoryReport: React.FC = () => {
             <div className="report-chart">
               <ResponsiveContainer width="100%" height={180}>
                 <BarChart data={monthlyServiceData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="month" />
-                  <YAxis />
-                  <Tooltip />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                  <XAxis dataKey="month" tick={{ fontSize: 12 }} stroke="#666" />
+                  <YAxis tick={{ fontSize: 12 }} stroke="#666" />
+                  <Tooltip 
+                    contentStyle={{
+                      backgroundColor: '#fff',
+                      border: '1px solid #ddd',
+                      borderRadius: '4px'
+                    }}
+                  />
                   <Legend />
-                  <Bar dataKey="cleaning" name="ທຳຄວາມສະອາດ" fill="#611463" />
-                  <Bar dataKey="ac" name="ສ້ອມແປງແອ" fill="#f7981e" />
-                  <Bar dataKey="electrical" name="ສ້ອມແປງໄຟຟ້າ" fill="#8e44ad" />
-                  <Bar dataKey="plumbing" name="ສ້ອມແປງນ້ຳປະປາ" fill="#16a085" />
+                  <Bar dataKey="cleaning" name="ທຳຄວາມສະອາດ" fill="#611463" radius={[2, 2, 0, 0]} />
+                  <Bar dataKey="ac" name="ສ້ອມແປງແອ" fill="#f7981e" radius={[2, 2, 0, 0]} />
+                  <Bar dataKey="electrical" name="ສ້ອມແປງໄຟຟ້າ" fill="#8e44ad" radius={[2, 2, 0, 0]} />
+                  <Bar dataKey="plumbing" name="ສ້ອມແປງນ້ຳປະປາ" fill="#16a085" radius={[2, 2, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -423,13 +454,14 @@ const ServiceHistoryReport: React.FC = () => {
   // Print footer component - only visible when printing
   const PrintFooter = () => (
     <div className="print-footer print-only" style={{ display: 'none' }}>
-          ພິມວັນທີ: {new Date().toLocaleDateString()} {new Date().toLocaleTimeString()}
+      <p>ພິມວັນທີ: {new Date().toLocaleDateString('lo-LA')} {new Date().toLocaleTimeString('lo-LA')}</p>
+      <p>ລາຍງານສ້າງໂດຍລະບົບການຈັດການບໍລິການ HomeCare</p>
     </div>
   );
   
   return (
     <Box className="service-history-container" id="service-history-report-print">
-      <Typography variant="h6" mb={2} fontWeight="bold" color="#611463" className="report-title no-print">
+      <Typography variant="h5" mb={3} fontWeight="bold" color="#611463" className="report-title no-print">
         ຂໍ້ມູນປະຫວັດການບໍລິການ
       </Typography>
       

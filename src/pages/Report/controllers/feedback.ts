@@ -177,7 +177,14 @@ export const useFeedbackReportController = () => {
       }
       
       // Make the API request
-      const response = await axios.get(`${url}?${params.toString()}`);
+      const response = await axios.get(`${url}?${params.toString()}`, {
+        timeout: 15000,
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        }
+      });
+      
       const rawData = response.data.data || [];
       
       // Enrich the comment data with derived fields
@@ -191,7 +198,24 @@ export const useFeedbackReportController = () => {
       
     } catch (err) {
       console.error('Error fetching comments:', err);
-      setError('ບໍ່ສາມາດດຶງຂໍ້ມູນໄດ້. ກະລຸນາລອງໃໝ່ພາຍຫຼັງ.');
+      
+      let errorMessage = 'ບໍ່ສາມາດດຶງຂໍ້ມູນໄດ້. ກະລຸນາລອງໃໝ່ພາຍຫຼັງ.';
+      
+      if (err.code === 'ECONNABORTED') {
+        errorMessage = 'ການເຊື່ອມຕໍ່ໃຊ້ເວລານານເກີນໄປ. ກະລຸນາລອງໃໝ່.';
+      } else if (err.response?.status === 404) {
+        errorMessage = 'ບໍ່ພົບ endpoint ນີ້. ກະລຸນາກວດສອບ URL.';
+      } else if (err.response?.status === 401) {
+        errorMessage = 'ບໍ່ມີສິດເຂົ້າເຖິງ. ຕ້ອງການການຢັ້ງຢືນ.';
+      } else if (err.response?.status === 403) {
+        errorMessage = 'ຖືກປະຕິເສດການເຂົ້າເຖິງ.';
+      } else if (err.response?.status >= 500) {
+        errorMessage = 'ເກີດຂໍ້ຜິດພາດໃນເຊີເວີ.';
+      } else if (err.code === 'ERR_NETWORK') {
+        errorMessage = 'ບັນຫາເຄືອຂ່າຍ. ກະລຸນາກວດສອບການເຊື່ອມຕໍ່.';
+      }
+      
+      setError(errorMessage);
       
       // Set empty data
       setComments([]);
@@ -263,45 +287,119 @@ export const useFeedbackReportController = () => {
     });
   };
 
-  // Export data to CSV
-  const handleExport = () => {
-    if (!comments.length) return;
-    
-    // Prepare data for export (with English rating text for better readability)
-    const exportData = comments.map(comment => ({
-      ID: comment.id,
-      Comment: comment.comment,
-      Message: comment.message,
-      Rating: comment.rating,
-      'Rating Text': RATING_TEXT_MAP_EN[comment.rating] || 'Unknown',
-      'Service Type': comment.service_name,
-      'User Name': comment.user_name,
-      'Created Date': formatDate(comment.created_at)
+  // Enhanced export function with proper UTF-8 encoding for Lao text
+const handleExport = () => {
+  if (!comments.length) {
+    alert('ບໍ່ມີຂໍ້ມູນສຳລັບການສົ່ງອອກ');
+    return;
+  }
+  
+  try {
+    // IMPROVED date formatting that Excel definitely recognizes
+    const formatDateForExcel = (dateString) => {
+      if (!dateString) return '';
+      
+      try {
+        const date = new Date(dateString);
+        
+        // Check if date is valid
+        if (isNaN(date.getTime())) {
+          return dateString; // Return original if can't parse
+        }
+        
+        // Use YYYY-MM-DD format (ISO format) - most reliable for Excel
+        const year = date.getFullYear();
+        const month = (date.getMonth() + 1).toString().padStart(2, '0');
+        const day = date.getDate().toString().padStart(2, '0');
+        
+        return `${year}-${month}-${day}`;
+      } catch (error) {
+        console.error('Date formatting error:', error);
+        return dateString;
+      }
+    };
+
+    // Prepare data with EXPLICIT field naming and typing
+    const exportData = comments.map((comment, index) => ({
+      'ID': String(comment.id || index + 1),
+      'Comment': String(comment.comment || ''),
+      'Message': String(comment.message || ''),
+      'Rating': String(comment.rating || ''),
+      'Rating_Text': String(comment.rating_text || ''),
+      'Service_Type': String(comment.service_name || ''),
+      'User_Name': String(comment.user_name || ''),
+      'Created_Date': formatDateForExcel(comment.created_at),
+      'Updated_Date': formatDateForExcel(comment.updated_at)
     }));
     
-    const csvData = Papa.unparse(exportData);
-    const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
+    // Enhanced CSV generation
+    const csvData = Papa.unparse(exportData, {
+      header: true,
+      encoding: 'utf8',
+      delimiter: ',',
+      newline: '\r\n',
+      skipEmptyLines: false,
+      quotes: false, // Let Papa decide when to quote
+      quoteChar: '"',
+      escapeChar: '"'
+    });
     
+    // Add UTF-8 BOM
+    const BOM = '\uFEFF';
+    const csvWithBOM = BOM + csvData;
+    
+    // Create and download
+    const blob = new Blob([csvWithBOM], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
-    link.setAttribute('href', url);
-    link.setAttribute('download', `feedback-report-${new Date().toISOString().split('T')[0]}.csv`);
-    link.style.visibility = 'hidden';
+    
+    link.href = url;
+    link.download = `ຂໍ້ມູນການໃຫ້ຄຳເຫັນ-${new Date().toISOString().split('T')[0]}.csv`;
+    link.style.display = 'none';
     
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-  };
-
-  // Handle print functionality - simplified to use standard print flow
+    URL.revokeObjectURL(url);
+    
+    console.log('✅ Feedback export successful');
+    
+  } catch (error) {
+    console.error('❌ Feedback export error:', error);
+    alert('ເກີດຂໍ້ຜິດພາດໃນການສົ່ງອອກຂໍ້ມູນ. ກະລຸນາລອງໃໝ່.');
+  }
+};
+  // Enhanced print functionality
   const handlePrint = () => {
-    window.print();
+    try {
+      // Store the original title
+      const originalTitle = document.title;
+      
+      // Set a descriptive title for the print
+      document.title = `ລາຍງານການໃຫ້ຄຳເຫັນ - ${new Date().toLocaleDateString('lo-LA')}`;
+      
+      // Add a small delay to ensure the page is fully rendered
+      setTimeout(() => {
+        // Trigger the print dialog
+        window.print();
+        
+        // Restore the original title after printing
+        setTimeout(() => {
+          document.title = originalTitle;
+        }, 1000);
+      }, 300);
+      
+    } catch (error) {
+      console.error('❌ Print error:', error);
+      alert('ເກີດຂໍ້ຜິດພາດໃນການພິມ. ກະລຸນາລອງໃໝ່.');
+    }
   };
 
   // Format date for display (YYYY-MM-DD to Mon DD, YYYY)
   const formatDate = (dateString: string) => {
+    if (!dateString) return '';
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { 
+    return date.toLocaleDateString('lo-LA', { 
       month: 'short',
       day: 'numeric',
       year: 'numeric'

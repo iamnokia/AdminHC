@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import * as Papa from 'papaparse';
 
-// Define interfaces
+// Define interfaces based on actual API response
 interface Provider {
   id: number;
   first_name?: string;
@@ -19,8 +19,8 @@ interface Provider {
   price?: number;
   status?: string;
   city?: string;
-  village?: string; // Added for village (ບ້ານ)
-  district?: string; // Added for district (ເມືອງ)
+  village?: string;
+  district?: string;
   car?: any;
   car_brand?: string;
   model?: string;
@@ -68,7 +68,7 @@ export const useServiceProviderReportController = () => {
   const [filterOpen, setFilterOpen] = useState<boolean>(false);
   const [filterParams, setFilterParams] = useState<FilterParams>({
     page: 1,
-    limit: 10,
+    limit: 50,
     startDate: null,
     endDate: null,
     catId: null,
@@ -88,6 +88,38 @@ export const useServiceProviderReportController = () => {
   
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [debugInfo, setDebugInfo] = useState<string>('');
+
+  // Map API response to expected format
+  const mapProviderResponse = (apiData: any[]): Provider[] => {
+    return apiData.map((item, index) => ({
+      // Map fields from actual API response
+      id: item.id || item.employee_id || index + 1,
+      first_name: item.first_name || '',
+      last_name: item.last_name || '',
+      employee_id: item.employee_id || item.id || 0,
+      email: item.email || '',
+      tel: item.tel || item.phone || '',
+      address: item.address || '',
+      gender: item.gender || 'male',
+      cv: item.cv || '',
+      avatar: item.avatar || '',
+      cat_id: item.cat_id || 0,
+      cat_name: item.cat_name || '',
+      price: parseFloat(item.price || item.amount || 0),
+      status: item.status || 'inactive',
+      city: item.city || '',
+      village: item.village || '',
+      district: item.district || '',
+      car_brand: item.car_brand || item.car?.car_brand || '',
+      model: item.model || item.car?.model || '',
+      license_plate: item.license_plate || item.car?.license_plate || '',
+      service_status: item.service_status || item.status || '',
+      order_date: item.order_date || '',
+      created_at: item.created_at || '',
+      updated_at: item.updated_at || ''
+    }));
+  };
 
   // Toggle filter panel
   const toggleFilter = () => {
@@ -147,33 +179,51 @@ export const useServiceProviderReportController = () => {
     });
   };
 
-  // Apply filters and fetch data
-  const applyFilters = async () => {
-    await fetchProviderData();
+  // Simple API test function
+  const testAPI = async () => {
+    console.log('🔍 Testing Provider API connections...');
+    setDebugInfo('Testing APIs...');
+    
+    try {
+      // Test employees endpoint
+      const employeesResponse = await axios.get(
+        'https://homecare-pro.onrender.com/employees/read_employees',
+        { timeout: 10000 }
+      );
+      
+      console.log('✅ Employees API Response:', employeesResponse);
+      console.log('📊 Employees Data:', employeesResponse.data);
+      
+      // Test car history endpoint
+      const carsResponse = await axios.get(
+        'https://homecare-pro.onrender.com/reports/emp_cars_history',
+        { timeout: 10000 }
+      );
+      
+      console.log('✅ Cars API Response:', carsResponse);
+      console.log('📊 Cars Data:', carsResponse.data);
+      
+      setDebugInfo(`APIs tested successfully. Employees: ${employeesResponse.data?.length || 0}, Cars: ${carsResponse.data?.data?.length || 0}`);
+      
+      return { employees: employeesResponse.data, cars: carsResponse.data };
+    } catch (error) {
+      console.error('❌ API Test Error:', error);
+      setDebugInfo(`API Error: ${error.message}`);
+      throw error;
+    }
   };
 
-  // Reset filters to default
-  const resetFilters = () => {
-    setFilterParams({
-      page: 1,
-      limit: 10,
-      startDate: null,
-      endDate: null,
-      catId: null,
-      status: null,
-      city: null
-    });
-  };
-
-  // Get all providers - unified approach based on new API endpoint
+  // Get all providers - unified approach based on API endpoints
   const fetchProviderData = async () => {
     setLoading(true);
     setError(null);
+    setDebugInfo('Starting provider data fetch...');
     
     try {
+      console.log('🚀 Starting provider data fetch...');
+      
       // Build the query parameters
       const params = new URLSearchParams();
-      
       params.append('page', filterParams.page.toString());
       params.append('limit', filterParams.limit.toString());
       
@@ -200,57 +250,47 @@ export const useServiceProviderReportController = () => {
       // Main array to store all providers
       let allProviders: Provider[] = [];
       
-      // 1. Get all employees data from the new endpoint
+      // 1. Get all employees data from the main endpoint
       try {
+        console.log('📡 Fetching employees data...');
         const employeesResponse = await axios.get(
-          `https://homecare-pro.onrender.com/employees/read_employees`
+          `https://homecare-pro.onrender.com/employees/read_employees`,
+          { timeout: 15000 }
         );
         
+        console.log('📊 Employees Response:', employeesResponse.data);
+        console.log('📊 Employees Type:', typeof employeesResponse.data);
+        console.log('📊 Is Array:', Array.isArray(employeesResponse.data));
+        
         if (employeesResponse.data && Array.isArray(employeesResponse.data)) {
-          // Process the data to match our Provider interface
-          const processedEmployees = employeesResponse.data.map((emp: any) => {
-            return {
-              id: emp.id || 0,
-              first_name: emp.first_name || '',
-              last_name: emp.last_name || '',
-              email: emp.email || '',
-              tel: emp.tel || '',
-              address: emp.address || '',
-              gender: emp.gender || 'male',
-              cv: emp.cv || '',
-              avatar: emp.avatar || '',
-              cat_id: emp.cat_id || 0,
-              cat_name: emp.cat_name || '',
-              price: parseFloat(emp.price) || 0,
-              status: emp.status || 'inactive',
-              city: emp.city || '',
-              village: '', // Extract from address if possible
-              district: '', // Extract from address if possible
-              created_at: emp.created_at || '',
-              updated_at: emp.updated_at || ''
-            };
-          });
-          
+          const processedEmployees = mapProviderResponse(employeesResponse.data);
           allProviders = [...processedEmployees];
+          console.log('✅ Processed employees:', processedEmployees.length);
         }
       } catch (err) {
-        console.error('Error fetching employees data:', err);
+        console.error('❌ Error fetching employees data:', err);
+        setDebugInfo(`Employee API error: ${err.message}`);
       }
       
       // 2. Get employees with cars
       try {
+        console.log('📡 Fetching car employees data...');
         const carResponse = await axios.get(
-          `https://homecare-pro.onrender.com/reports/emp_cars_history?${params.toString()}`
+          `https://homecare-pro.onrender.com/reports/emp_cars_history?${params.toString()}`,
+          { timeout: 15000 }
         );
+        
+        console.log('📊 Car Response:', carResponse.data);
         
         if (carResponse.data && carResponse.data.data) {
           const carData = carResponse.data.data.filter((item: Provider) => 
             item.car_brand && item.license_plate
           );
           
+          console.log('✅ Car providers found:', carData.length);
+          
           // Process car providers to update main providers with car info
           carData.forEach((carProvider: Provider) => {
-            // Try to find matching provider in the main array
             const existingIndex = allProviders.findIndex(p => p.id === carProvider.id);
             
             if (existingIndex >= 0) {
@@ -264,34 +304,38 @@ export const useServiceProviderReportController = () => {
               };
             } else {
               // Add as new provider
-              allProviders.push(carProvider);
+              const mappedCarProvider = mapProviderResponse([carProvider])[0];
+              allProviders.push(mappedCarProvider);
             }
           });
           
           // Set car providers for the second tab
-          setCarProviders(carData);
+          setCarProviders(mapProviderResponse(carData));
         }
       } catch (err) {
-        console.error('Error fetching car employees data:', err);
+        console.error('❌ Error fetching car employees data:', err);
+        setDebugInfo(prev => `${prev}; Car API error: ${err.message}`);
       }
       
       // 3. Fetch specific moving category providers if needed
       if (tabValue === 1 || filterParams.catId === '5') {
         try {
+          console.log('📡 Fetching moving providers...');
           const movingParams = new URLSearchParams(params);
-          // Force the category to Moving (5)
           movingParams.set('cat_id', '5');
           
           const movingResponse = await axios.get(
-            `https://homecare-pro.onrender.com/reports/read_emp_car_employees/5?${movingParams.toString()}`
+            `https://homecare-pro.onrender.com/reports/read_emp_car_employees/5?${movingParams.toString()}`,
+            { timeout: 15000 }
           );
+          
+          console.log('📊 Moving Response:', movingResponse.data);
           
           if (movingResponse.data && movingResponse.data.data) {
             const movingData = movingResponse.data.data;
             
             // Process moving providers
             movingData.forEach((movingProvider: Provider) => {
-              // Try to find matching provider in the main array
               const existingIndex = allProviders.findIndex(p => p.id === movingProvider.id);
               
               if (existingIndex >= 0) {
@@ -305,20 +349,23 @@ export const useServiceProviderReportController = () => {
                 };
               } else {
                 // Add as new provider
-                allProviders.push(movingProvider);
+                const mappedMovingProvider = mapProviderResponse([movingProvider])[0];
+                allProviders.push(mappedMovingProvider);
               }
             });
             
             // Update car providers for the second tab
             setCarProviders(prev => {
-              // Add only unique providers (not already in the list)
               const existingIds = new Set(prev.map(p => p.id));
-              const newProviders = movingData.filter((p: Provider) => !existingIds.has(p.id));
+              const newProviders = movingData
+                .filter((p: Provider) => !existingIds.has(p.id))
+                .map((p: Provider) => mapProviderResponse([p])[0]);
               return [...prev, ...newProviders];
             });
           }
         } catch (err) {
-          console.error('Error fetching moving providers:', err);
+          console.error('❌ Error fetching moving providers:', err);
+          setDebugInfo(prev => `${prev}; Moving API error: ${err.message}`);
         }
       }
       
@@ -341,6 +388,8 @@ export const useServiceProviderReportController = () => {
           district: provider.district || district
         };
       });
+      
+      console.log('📈 All providers before filtering:', allProviders.length);
       
       // Apply filtering based on params
       let filteredProviders = allProviders;
@@ -374,6 +423,8 @@ export const useServiceProviderReportController = () => {
         });
       }
       
+      console.log('📈 Filtered providers:', filteredProviders.length);
+      
       // Apply pagination
       const start = (filterParams.page - 1) * filterParams.limit;
       const end = start + filterParams.limit;
@@ -384,14 +435,46 @@ export const useServiceProviderReportController = () => {
         new Map(paginatedProviders.map(item => [item.id, item])).values()
       );
       
+      console.log('📈 Final unique providers:', uniqueProviders.length);
+      
       setProviderData(uniqueProviders);
+      setDebugInfo(`Successfully loaded ${uniqueProviders.length} providers`);
       
       // Process data for charts
       processDataForCharts(filteredProviders); // Use all filtered data for charts, not just paginated
       
+      if (uniqueProviders.length === 0) {
+        setError('ບໍ່ມີຂໍ້ມູນສຳລັບການເລືອກປະຈຸບັນ');
+      }
+      
     } catch (err) {
-      console.error('Error fetching provider data:', err);
-      setError('ບໍ່ສາມາດດຶງຂໍ້ມູນໄດ້. ກະລຸນາລອງໃໝ່ພາຍຫຼັງ.');
+      console.error('💥 Error fetching provider data:', err);
+      console.error('💥 Error Details:', {
+        message: err.message,
+        status: err.response?.status,
+        statusText: err.response?.statusText,
+        data: err.response?.data,
+        url: err.config?.url
+      });
+      
+      let errorMessage = 'ບໍ່ສາມາດດຶງຂໍ້ມູນໄດ້. ກະລຸນາລອງໃໝ່ພາຍຫຼັງ.';
+      
+      if (err.code === 'ECONNABORTED') {
+        errorMessage = 'ການເຊື່ອມຕໍ່ໃຊ້ເວລານານເກີນໄປ. ກະລຸນາລອງໃໝ່.';
+      } else if (err.response?.status === 404) {
+        errorMessage = 'ບໍ່ພົບ endpoint ນີ້. ກະລຸນາກວດສອບ URL.';
+      } else if (err.response?.status === 401) {
+        errorMessage = 'ບໍ່ມີສິດເຂົ້າເຖິງ. ຕ້ອງການການຢັ້ງຢືນ.';
+      } else if (err.response?.status === 403) {
+        errorMessage = 'ຖືກປະຕິເສດການເຂົ້າເຖິງ.';
+      } else if (err.response?.status >= 500) {
+        errorMessage = 'ເກີດຂໍ້ຜິດພາດໃນເຊີເວີ.';
+      } else if (err.code === 'ERR_NETWORK') {
+        errorMessage = 'ບັນຫາເຄືອຂ່າຍ. ກະລຸນາກວດສອບການເຊື່ອມຕໍ່.';
+      }
+      
+      setError(errorMessage);
+      setDebugInfo(`Error: ${err.message}`);
       
       // Reset data
       setProviderData([]);
@@ -413,6 +496,8 @@ export const useServiceProviderReportController = () => {
       return;
     }
 
+    console.log('📊 Processing data for charts:', data.length, 'providers');
+
     // Count providers by category
     const categoryCounts: Record<string, number> = {};
     
@@ -430,6 +515,7 @@ export const useServiceProviderReportController = () => {
       }));
     
     setCategoryDistribution(categoryData);
+    console.log('📊 Category distribution:', categoryData);
     
     // Count providers by status
     const activeCount = data.filter(
@@ -448,20 +534,20 @@ export const useServiceProviderReportController = () => {
     
     // Process price ranges
     const priceRanges = [
-      { range: '0-50', count: 0 },
-      { range: '51-100', count: 0 },
-      { range: '101-150', count: 0 },
-      { range: '151+', count: 0 }
+      { range: '0-50000', count: 0 },
+      { range: '50001-100000', count: 0 },
+      { range: '100001-200000', count: 0 },
+      { range: '200001+', count: 0 }
     ];
     
     data.forEach(provider => {
       const price = provider.price || provider.amount || 0;
       
-      if (price <= 50) {
+      if (price <= 50000) {
         priceRanges[0].count++;
-      } else if (price <= 100) {
+      } else if (price <= 100000) {
         priceRanges[1].count++;
-      } else if (price <= 150) {
+      } else if (price <= 200000) {
         priceRanges[2].count++;
       } else {
         priceRanges[3].count++;
@@ -469,29 +555,209 @@ export const useServiceProviderReportController = () => {
     });
     
     setPriceRangeData(priceRanges);
+    console.log('✅ Charts data processed successfully');
   };
 
-  // Export data to CSV
+  // Mock data for testing
+  const useMockData = () => {
+    console.log('🎭 Using mock provider data...');
+    
+    const mockApiData = [
+      {
+        id: 1,
+        first_name: 'ສົມພອນ',
+        last_name: 'ວົງສີ',
+        email: 'sompon@example.com',
+        tel: '020-12345678',
+        address: 'ບ້ານໂພນເມືອງ, ເມືອງຈັນທະບູລີ',
+        gender: 'male',
+        cat_id: 1,
+        price: 150000,
+        status: 'active',
+        city: 'CHANTHABULY',
+        created_at: '2025-01-01T00:00:00Z'
+      },
+      {
+        id: 2,
+        first_name: 'ມາລີ',
+        last_name: 'ພົມມະ',
+        email: 'malee@example.com',
+        tel: '020-87654321',
+        address: 'ບ້ານດົງປະລານ, ເມືອງສີໂຄດຕະບົງ',
+        gender: 'female',
+        cat_id: 2,
+        price: 200000,
+        status: 'active',
+        city: 'SIKHOTTABONG',
+        created_at: '2025-01-02T00:00:00Z'
+      },
+      {
+        id: 3,
+        first_name: 'ບຸນມີ',
+        last_name: 'ແກ້ວ',
+        email: 'bounmy@example.com',
+        tel: '020-11223344',
+        address: 'ບ້ານໂນນໝີ່ໃຕ້, ເມືອງໄຊເສດຖາ',
+        gender: 'male',
+        cat_id: 5,
+        price: 350000,
+        status: 'active',
+        city: 'XAYSETHA',
+        car_brand: 'Toyota',
+        model: 'Hilux',
+        license_plate: 'VTE-1234',
+        created_at: '2025-01-03T00:00:00Z'
+      },
+      {
+        id: 4,
+        first_name: 'ນາງສີດາ',
+        last_name: 'ຄຳ',
+        email: 'sida@example.com',
+        tel: '020-55667788',
+        address: 'ບ້ານດົງນາທອງ, ເມືອງສີສັດຕະນາກ',
+        gender: 'female',
+        cat_id: 3,
+        price: 120000,
+        status: 'inactive',
+        city: 'SISATTANAK',
+        created_at: '2025-01-04T00:00:00Z'
+      },
+      {
+        id: 5,
+        first_name: 'ຄຳພອນ',
+        last_name: 'ລາວົງ',
+        email: 'kampone@example.com',
+        tel: '020-99887766',
+        address: 'ບ້ານໂພນຫອງ, ເມືອງນາໄຊທອງ',
+        gender: 'male',
+        cat_id: 4,
+        price: 180000,
+        status: 'active',
+        city: 'NAXAITHONG',
+        created_at: '2025-01-05T00:00:00Z'
+      }
+    ];
+    
+    const mappedMockData = mapProviderResponse(mockApiData);
+    setProviderData(mappedMockData);
+    processDataForCharts(mappedMockData);
+    
+    // Set car providers (filter those with cars)
+    const mockCarProviders = mappedMockData.filter(p => p.car_brand);
+    setCarProviders(mockCarProviders);
+    
+    setError(null);
+    setDebugInfo('Using mock data for testing');
+  };
+
+  // Apply filters and fetch data
+  const applyFilters = async () => {
+    await fetchProviderData();
+  };
+
+  // Reset filters to default
+  const resetFilters = () => {
+    setFilterParams({
+      page: 1,
+      limit: 50,
+      startDate: null,
+      endDate: null,
+      catId: null,
+      status: null,
+      city: null
+    });
+  };
+
+  // Export data to CSV with proper Lao font support
   const handleExport = () => {
-    if (!providerData.length) return;
+    if (!providerData.length) {
+      alert('ບໍ່ມີຂໍ້ມູນສຳລັບການສົ່ງອອກ');
+      return;
+    }
     
-    const csvData = Papa.unparse(providerData);
-    const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    
-    const link = document.createElement('a');
-    link.setAttribute('href', url);
-    link.setAttribute('download', `service-provider-report-${new Date().toISOString().split('T')[0]}.csv`);
-    link.style.visibility = 'hidden';
-    
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    try {
+      // Prepare data for export with Lao headers
+      const exportData = providerData.map(provider => ({
+        'ລະຫັດ': provider.id || '',
+        'ຊື່': provider.first_name || '',
+        'ນາມສະກຸນ': provider.last_name || '',
+        'ອີເມວ': provider.email || '',
+        'ເບີໂທ': provider.tel || '',
+        'ທີ່ຢູ່': provider.address || '',
+        'ເພດ': provider.gender === 'male' ? 'ຊາຍ' : 'ຍິງ',
+        'ປະເພດການບໍລິການ': categoryMap[provider.cat_id] || '',
+        'ລາຄາ': provider.price || '',
+        'ສະຖານະ': provider.status || '',
+        'ເມືອງ': provider.city || '',
+        'ບ້ານ': provider.village || '',
+        'ຍີ່ຫໍ້ລົດ': provider.car_brand || '',
+        'ຮຸ່ນລົດ': provider.model || '',
+        'ປ້າຍທະບຽນ': provider.license_plate || '',
+        'ວັນທີສ້າງ': provider.created_at || '',
+        'ວັນທີອັບເດດ': provider.updated_at || ''
+      }));
+      
+      // Create CSV data with Papa Parse
+      const csvData = Papa.unparse(exportData, {
+        header: true,
+        encoding: 'utf8'
+      });
+      
+      // Add UTF-8 BOM to ensure proper encoding in Excel for Lao text
+      const BOM = '\uFEFF';
+      const csvWithBOM = BOM + csvData;
+      
+      // Create blob with proper MIME type
+      const blob = new Blob([csvWithBOM], { 
+        type: 'text/csv;charset=utf-8;' 
+      });
+      
+      const url = URL.createObjectURL(blob);
+      
+      // Create download link
+      const link = document.createElement('a');
+      link.setAttribute('href', url);
+      
+      // Generate filename with Lao text and current date
+      const currentDate = new Date().toISOString().split('T')[0];
+      const filename = `ລາຍງານຜູ້ໃຫ້ບໍລິການ-${currentDate}.csv`;
+      
+      link.setAttribute('download', filename);
+      link.style.visibility = 'hidden';
+      
+      // Trigger download
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      // Clean up the URL object
+      URL.revokeObjectURL(url);
+      
+      console.log('✅ Export successful');
+      
+    } catch (error) {
+      console.error('❌ Export error:', error);
+      alert('ເກີດຂໍ້ຜິດພາດໃນການສົ່ງອອກຂໍ້ມູນ. ກະລຸນາລອງໃໝ່.');
+    }
   };
 
-  // Simple print functionality - uses CSS for print styling
+  // Enhanced print functionality
   const handlePrint = () => {
-    window.print();
+    try {
+      const originalTitle = document.title;
+      document.title = `ລາຍງານຜູ້ໃຫ້ບໍລິການ - ${new Date().toLocaleDateString('lo-LA')}`;
+      
+      setTimeout(() => {
+        window.print();
+        setTimeout(() => {
+          document.title = originalTitle;
+        }, 1000);
+      }, 300);
+      
+    } catch (error) {
+      console.error('❌ Print error:', error);
+      alert('ເກີດຂໍ້ຜິດພາດໃນການພິມ. ກະລຸນາລອງໃໝ່.');
+    }
   };
 
   // Initial data fetch on component mount
@@ -522,6 +788,7 @@ export const useServiceProviderReportController = () => {
     resetFilters,
     loading,
     error,
+    debugInfo,
     providerData,
     categoryDistribution,
     statusDistribution,
@@ -532,6 +799,8 @@ export const useServiceProviderReportController = () => {
     expandedRows,
     toggleRowExpansion,
     handleExport,
-    handlePrint
+    handlePrint,
+    useMockData,
+    testAPI
   };
 };

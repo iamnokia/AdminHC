@@ -195,13 +195,14 @@ export const useServiceHistoryController = () => {
 
   // Format date (YYYY-MM-DD to DD/MM/YYYY)
   const formatDate = (dateString: string) => {
+    if (!dateString) return '';
     const date = new Date(dateString);
     return `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear()}`;
   };
 
   // Format currency
   const formatCurrency = (amount: number = 0) => {
-    return `${amount.toLocaleString()} ₭`;
+    return `${amount.toLocaleString('lo-LA')} ກີບ`;
   };
 
   // Enrich service order data with derived fields
@@ -223,7 +224,7 @@ export const useServiceHistoryController = () => {
       const statusColor = STATUS_COLORS[status] || { bg: '#f5f5f5', text: '#757575' };
       
       // Format amount
-      const formattedAmount = order.amount ? formatCurrency(order.amount) : '0 ₭';
+      const formattedAmount = order.amount ? formatCurrency(order.amount) : '0 ກີບ';
       
       return {
         id: order.id,
@@ -268,7 +269,14 @@ export const useServiceHistoryController = () => {
       }
       
       // Make the API request
-      const response = await axios.get(`${url}?${params.toString()}`);
+      const response = await axios.get(`${url}?${params.toString()}`, {
+        timeout: 15000,
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        }
+      });
+      
       const rawData = response.data.data || [];
       const totalCount = response.data.total || rawData.length;
       
@@ -284,7 +292,24 @@ export const useServiceHistoryController = () => {
       
     } catch (err) {
       console.error('Error fetching service orders:', err);
-      setError('ບໍ່ສາມາດດຶງຂໍ້ມູນໄດ້. ກະລຸນາລອງໃໝ່ພາຍຫຼັງ.');
+      
+      let errorMessage = 'ບໍ່ສາມາດດຶງຂໍ້ມູນໄດ້. ກະລຸນາລອງໃໝ່ພາຍຫຼັງ.';
+      
+      if (err.code === 'ECONNABORTED') {
+        errorMessage = 'ການເຊື່ອມຕໍ່ໃຊ້ເວລານານເກີນໄປ. ກະລຸນາລອງໃໝ່.';
+      } else if (err.response?.status === 404) {
+        errorMessage = 'ບໍ່ພົບ endpoint ນີ້. ກະລຸນາກວດສອບ URL.';
+      } else if (err.response?.status === 401) {
+        errorMessage = 'ບໍ່ມີສິດເຂົ້າເຖິງ. ຕ້ອງການການຢັ້ງຢືນ.';
+      } else if (err.response?.status === 403) {
+        errorMessage = 'ຖືກປະຕິເສດການເຂົ້າເຖິງ.';
+      } else if (err.response?.status >= 500) {
+        errorMessage = 'ເກີດຂໍ້ຜິດພາດໃນເຊີເວີ.';
+      } else if (err.code === 'ERR_NETWORK') {
+        errorMessage = 'ບັນຫາເຄືອຂ່າຍ. ກະລຸນາກວດສອບການເຊື່ອມຕໍ່.';
+      }
+      
+      setError(errorMessage);
       
       // Set empty data
       setServiceOrders([]);
@@ -403,35 +428,125 @@ export const useServiceHistoryController = () => {
     setMonthlyServiceData(filteredData);
   };
 
-  // Export data to CSV
+  // Enhanced export function with proper UTF-8 encoding for Lao text
   const handleExport = () => {
-    if (!serviceOrders.length) return;
+  if (!serviceOrders.length) {
+    alert('ບໍ່ມີຂໍ້ມູນສຳລັບການສົ່ງອອກ');
+    return;
+  }
+  
+  try {
+    // Same improved date formatting
+    const formatDateForExcel = (dateString) => {
+      if (!dateString) return '';
+      
+      try {
+        // If it's already in DD/MM/YYYY format, convert it
+        if (dateString.includes('/')) {
+          const parts = dateString.split('/');
+          if (parts.length === 3) {
+            const day = parts[0];
+            const month = parts[1];
+            const year = parts[2];
+            return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+          }
+        }
+        
+        // Otherwise, parse as normal date
+        const date = new Date(dateString);
+        if (isNaN(date.getTime())) {
+          return dateString;
+        }
+        
+        const year = date.getFullYear();
+        const month = (date.getMonth() + 1).toString().padStart(2, '0');
+        const day = date.getDate().toString().padStart(2, '0');
+        
+        return `${year}-${month}-${day}`;
+      } catch (error) {
+        console.error('Date formatting error:', error);
+        return dateString;
+      }
+    };
+
+    // Clean amount - remove all non-numeric characters except decimal point
+    const cleanAmount = (amountString) => {
+      if (!amountString) return '0';
+      const cleaned = String(amountString).replace(/[^\d.]/g, '');
+      return cleaned || '0';
+    };
+
+    // Prepare data with clear English headers
+    const exportData = serviceOrders.map((order, index) => ({
+      'ID': String(order.id || index + 1),
+      'Date': formatDateForExcel(order.date),
+      'Service_Type': String(order.service || ''),
+      'Provider': String(order.provider || ''),
+      'Status': String(order.status || ''),
+      'Amount': cleanAmount(order.amount)
+    }));
     
-    const csvData = Papa.unparse(serviceOrders.map(order => ({
-      ID: order.id,
-      Date: order.date,
-      Service: order.service,
-      Provider: order.provider,
-      Status: order.status,
-      Amount: order.amount
-    })));
+    // Generate CSV
+    const csvData = Papa.unparse(exportData, {
+      header: true,
+      encoding: 'utf8',
+      delimiter: ',',
+      newline: '\r\n',
+      skipEmptyLines: false,
+      quotes: false,
+      quoteChar: '"',
+      escapeChar: '"'
+    });
     
-    const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' });
+    // Add UTF-8 BOM
+    const BOM = '\uFEFF';
+    const csvWithBOM = BOM + csvData;
+    
+    // Create and download
+    const blob = new Blob([csvWithBOM], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
-    
     const link = document.createElement('a');
-    link.setAttribute('href', url);
-    link.setAttribute('download', `service-history-report-${new Date().toISOString().split('T')[0]}.csv`);
-    link.style.visibility = 'hidden';
+    
+    link.href = url;
+    link.download = `ຂໍ້ມູນປະຫວັດການບໍລິການ-${new Date().toISOString().split('T')[0]}.csv`;
+    link.style.display = 'none';
     
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-  };
-
-  // Handle print functionality - simplified to use standard print flow
+    URL.revokeObjectURL(url);
+    
+    console.log('✅ Service history export successful');
+    
+  } catch (error) {
+    console.error('❌ Service history export error:', error);
+    alert('ເກີດຂໍ້ຜິດພາດໃນການສົ່ງອອກຂໍ້ມູນ. ກະລຸນາລອງໃໝ່.');
+  }
+};
+  // Enhanced print functionality
   const handlePrint = () => {
-    window.print();
+    try {
+      // Store the original title
+      const originalTitle = document.title;
+      
+      // Set a descriptive title for the print
+      document.title = `ຂໍ້ມູນປະຫວັດການບໍລິການ - ${new Date().toLocaleDateString('lo-LA')}`;
+      
+      // Add a small delay to ensure the page is fully rendered
+      setTimeout(() => {
+        // Trigger the print dialog
+        window.print();
+        
+        // Restore the original title after printing
+        setTimeout(() => {
+          document.title = originalTitle;
+        }, 1000);
+      }, 300);
+      
+    } catch (error) {
+      console.error('❌ Print error:', error);
+      alert('ເກີດຂໍ້ຜິດພາດໃນການພິມ. ກະລຸນາລອງໃໝ່.');
+    }
   };
 
   // Handle page change for pagination

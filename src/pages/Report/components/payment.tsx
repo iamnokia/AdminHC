@@ -55,10 +55,13 @@ const PaymentReport: React.FC = () => {
     summaryData,
     loading,
     error,
+    debugInfo,
     handleExport,
     handlePrint,
     formatDate,
-    formatCurrency
+    formatCurrency,
+    useMockData,
+    testAPI
   } = usePaymentReportController();
   
   // Filter panel component
@@ -92,6 +95,23 @@ const PaymentReport: React.FC = () => {
             />
           </Grid>
           <Grid item xs={12} md={2}>
+            <FormControl fullWidth size="small">
+              <InputLabel>ສະຖານະການຊຳລະ</InputLabel>
+              <Select 
+                label="ສະຖານະການຊຳລະ" 
+                name="paymentStatus"
+                value={filterParams.paymentStatus || ''}
+                onChange={handleStatusChange}
+              >
+                <MenuItem value="">ທັງໝົດ</MenuItem>
+                <MenuItem value="paid">ຊຳລະແລ້ວ</MenuItem>
+                <MenuItem value="pending">ລໍຖ້າ</MenuItem>
+                <MenuItem value="failed">ຊຳລະບໍ່ສຳເລັດ</MenuItem>
+                <MenuItem value="completed">ສຳເລັດ</MenuItem>
+              </Select>
+            </FormControl>
+          </Grid>
+          <Grid item xs={12} md={2}>
             <TextField
               label="ໜ້າ"
               type="number"
@@ -115,34 +135,32 @@ const PaymentReport: React.FC = () => {
               inputProps={{ min: 1, max: 100 }}
             />
           </Grid>
-          <Grid item xs={12} md={2}>
-            <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
-              <Button 
-                variant="contained" 
-                onClick={applyFilters}
-                disabled={loading}
-                sx={{ 
-                  bgcolor: '#611463', 
-                  '&:hover': { bgcolor: '#4a0d4c' } 
-                }}
-              >
-                ນຳໃຊ້
-              </Button>
-              <Button 
-                variant="outlined" 
-                onClick={resetFilters}
-                disabled={loading}
-                sx={{ 
-                  color: '#611463', 
-                  borderColor: '#611463',
-                  '&:hover': { borderColor: '#4a0d4c' } 
-                }}
-              >
-                ຕັ້ງຄ່າໃໝ່
-              </Button>
-            </Box>
-          </Grid>
         </Grid>
+        <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end', mt: 2 }}>
+          <Button 
+            variant="contained" 
+            onClick={applyFilters}
+            disabled={loading}
+            sx={{ 
+              bgcolor: '#611463', 
+              '&:hover': { bgcolor: '#4a0d4c' } 
+            }}
+          >
+            ນຳໃຊ້
+          </Button>
+          <Button 
+            variant="outlined" 
+            onClick={resetFilters}
+            disabled={loading}
+            sx={{ 
+              color: '#611463', 
+              borderColor: '#611463',
+              '&:hover': { borderColor: '#4a0d4c' } 
+            }}
+          >
+            ຕັ້ງຄ່າໃໝ່
+          </Button>
+        </Box>
       </Paper>
     </Box>
   );
@@ -205,11 +223,12 @@ const PaymentReport: React.FC = () => {
 
   // Print header component - only visible when printing
   const PrintHeader = () => (
-    <div className="print-header print-only" style={{ display: 'none' }}>
+    <div className="print-header print-only">
       <h1>ລາຍງານການຊຳລະເງິນ</h1>
       {filterParams.startDate && filterParams.endDate && (
-        <p>ໄລຍະເວລາ: {filterParams.startDate} - {filterParams.endDate}</p>
+        <p>ໄລຍະເວລາ: {filterParams.startDate} ເຖິງ {filterParams.endDate}</p>
       )}
+      <p>ສ້າງເມື່ອ: {new Date().toLocaleDateString('lo-LA')} {new Date().toLocaleTimeString('lo-LA')}</p>
     </div>
   );
 
@@ -222,9 +241,34 @@ const PaymentReport: React.FC = () => {
           display: 'flex', 
           alignItems: 'center', 
           justifyContent: 'center',
-          color: 'text.secondary' 
+          color: 'text.secondary',
+          flexDirection: 'column',
+          gap: 2
         }}>
-          <Typography>ບໍ່ມີຂໍ້ມູນສຳລັບການເລືອກປະຈຸບັນ</Typography>
+          <Typography variant="h6" color="text.secondary">
+            ບໍ່ມີຂໍ້ມູນສຳລັບການເລືອກປະຈຸບັນ
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            ກະລຸນາປັບແຕ່ງຕົວເລືອກການຟິວເຕີແລະລອງໃໝ່
+          </Typography>
+          <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', justifyContent: 'center' }}>
+            <Button 
+              variant="outlined" 
+              onClick={applyFilters}
+              sx={{ color: '#611463', borderColor: '#611463' }}
+              size="small"
+            >
+              ລອງໃໝ່
+            </Button>
+            <Button 
+              variant="outlined" 
+              onClick={useMockData}
+              sx={{ color: '#f7981e', borderColor: '#f7981e' }}
+              size="small"
+            >
+              ທົດສອບດ້ວຍຂໍ້ມູນຕົວຢ່າງ
+            </Button>
+          </Box>
         </Box>
       );
     }
@@ -232,28 +276,45 @@ const PaymentReport: React.FC = () => {
     return (
       <Grid container spacing={2}>
         <Grid item xs={12}>
-          <Typography variant="subtitle2" fontWeight="medium" mb={1}>
+          <Typography variant="subtitle2" fontWeight="medium" mb={2} color="#611463">
             ພາບລວມລາຍໄດ້ແບບລາຍເດືອນ
           </Typography>
           <div className="report-chart">
             <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={paymentData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip formatter={(value) => formatCurrency(Number(value))} />
+              <LineChart data={paymentData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                <XAxis 
+                  dataKey="name" 
+                  tick={{ fontSize: 12 }}
+                  stroke="#666"
+                />
+                <YAxis 
+                  tick={{ fontSize: 12 }}
+                  stroke="#666"
+                />
+                <Tooltip 
+                  formatter={(value) => formatCurrency(Number(value))}
+                  contentStyle={{
+                    backgroundColor: '#fff',
+                    border: '1px solid #ddd',
+                    borderRadius: '4px'
+                  }}
+                />
                 <Legend />
                 <Line 
                   type="monotone" 
                   dataKey="income" 
                   stroke="#611463" 
-                  activeDot={{ r: 8 }} 
+                  strokeWidth={3}
+                  activeDot={{ r: 6, fill: '#611463' }} 
                   name="ລາຍຮັບ" 
                 />
                 <Line 
                   type="monotone" 
                   dataKey="expense" 
                   stroke="#f7981e" 
+                  strokeWidth={3}
+                  activeDot={{ r: 6, fill: '#f7981e' }}
                   name="ລາຍຈ່າຍ" 
                 />
               </LineChart>
@@ -262,19 +323,43 @@ const PaymentReport: React.FC = () => {
         </Grid>
         
         <Grid item xs={12}>
-          <Typography variant="subtitle2" fontWeight="medium" mb={1}>
+          <Typography variant="subtitle2" fontWeight="medium" mb={2} color="#611463">
             ການວິເຄາະລາຍຮັບແລະລາຍຈ່າຍ
           </Typography>
           <div className="report-chart">
             <ResponsiveContainer width="100%" height={200}>
-              <BarChart data={paymentData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip formatter={(value) => formatCurrency(Number(value))} />
+              <BarChart data={paymentData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                <XAxis 
+                  dataKey="name" 
+                  tick={{ fontSize: 12 }}
+                  stroke="#666"
+                />
+                <YAxis 
+                  tick={{ fontSize: 12 }}
+                  stroke="#666"
+                />
+                <Tooltip 
+                  formatter={(value) => formatCurrency(Number(value))}
+                  contentStyle={{
+                    backgroundColor: '#fff',
+                    border: '1px solid #ddd',
+                    borderRadius: '4px'
+                  }}
+                />
                 <Legend />
-                <Bar dataKey="income" fill="#611463" name="ລາຍຮັບ" />
-                <Bar dataKey="expense" fill="#f7981e" name="ລາຍຈ່າຍ" />
+                <Bar 
+                  dataKey="income" 
+                  fill="#611463" 
+                  name="ລາຍຮັບ"
+                  radius={[2, 2, 0, 0]}
+                />
+                <Bar 
+                  dataKey="expense" 
+                  fill="#f7981e" 
+                  name="ລາຍຈ່າຍ"
+                  radius={[2, 2, 0, 0]}
+                />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -294,9 +379,12 @@ const PaymentReport: React.FC = () => {
           display: 'flex', 
           alignItems: 'center', 
           justifyContent: 'center',
-          color: 'text.secondary' 
+          color: 'text.secondary',
+          flexDirection: 'column',
+          gap: 2
         }}>
-          <Typography>ບໍ່ມີຂໍ້ມູນທຸລະກຳລ່າສຸດ</Typography>
+          <Typography variant="h6">ບໍ່ມີຂໍ້ມູນທຸລະກຳລ່າສຸດ</Typography>
+          <Typography variant="body2">ກະລຸນາປັບແຕ່ງຕົວເລືອກການຟິວເຕີແລະລອງໃໝ່</Typography>
         </Box>
       );
     }
@@ -305,40 +393,56 @@ const PaymentReport: React.FC = () => {
       <Box sx={{ overflowX: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
-            <tr style={{ borderBottom: '1px solid #e0e0e0' }}>
-              <th style={{ padding: '12px 8px', textAlign: 'left' }}>ວັນທີ</th>
-              <th style={{ padding: '12px 8px', textAlign: 'left' }}>ລະຫັດທຸລະກຳ</th>
-              <th style={{ padding: '12px 8px', textAlign: 'left' }}>ຜູ້ໃຫ້ບໍລິການ</th>
-              <th style={{ padding: '12px 8px', textAlign: 'left' }}>ຈຳນວນເງີນ</th>
-              <th style={{ padding: '12px 8px', textAlign: 'left' }}>ສະຖານະ</th>
+            <tr style={{ borderBottom: '2px solid #611463', backgroundColor: '#f5f5f5' }}>
+              <th style={{ padding: '12px 8px', textAlign: 'left', fontWeight: 'bold', color: '#611463' }}>ວັນທີ</th>
+              <th style={{ padding: '12px 8px', textAlign: 'left', fontWeight: 'bold', color: '#611463' }}>ລະຫັດທຸລະກຳ</th>
+              <th style={{ padding: '12px 8px', textAlign: 'left', fontWeight: 'bold', color: '#611463' }}>ປະເພດບໍລິການ</th>
+              <th style={{ padding: '12px 8px', textAlign: 'left', fontWeight: 'bold', color: '#611463' }}>ຈຳນວນເງິນ</th>
+              <th style={{ padding: '12px 8px', textAlign: 'left', fontWeight: 'bold', color: '#611463' }}>ສະຖານະ</th>
             </tr>
           </thead>
           <tbody>
-            {recentTransactions.map((transaction) => {
+            {recentTransactions.map((transaction, index) => {
               // Determine status color
               let statusColor = '';
+              let statusBgColor = '';
               switch (transaction.payment_status.toLowerCase()) {
                 case 'completed':
-                  statusColor = 'green';
+                case 'paid':
+                  statusColor = '#2e7d32';
+                  statusBgColor = '#e6f7ee';
                   break;
                 case 'pending':
-                  statusColor = 'orange';
+                  statusColor = '#ed6c02';
+                  statusBgColor = '#fff4e5';
                   break;
                 case 'failed':
-                  statusColor = 'red';
+                  statusColor = '#d32f2f';
+                  statusBgColor = '#ffebee';
                   break;
                 default:
-                  statusColor = 'inherit';
+                  statusColor = '#666';
+                  statusBgColor = '#f5f5f5';
               }
               
               return (
-                <tr key={transaction.id} style={{ borderBottom: '1px solid #f0f0f0' }}>
+                <tr key={transaction.id} style={{ 
+                  borderBottom: '1px solid #f0f0f0',
+                  backgroundColor: index % 2 === 0 ? '#fff' : '#fafafa'
+                }}>
                   <td style={{ padding: '12px 8px' }}>{formatDate(transaction.created_at)}</td>
-                  <td style={{ padding: '12px 8px' }}>{transaction.payment_id}</td>
+                  <td style={{ padding: '12px 8px', fontFamily: 'monospace' }}>{transaction.payment_id}</td>
                   <td style={{ padding: '12px 8px' }}>{transaction.service_type}</td>
-                  <td style={{ padding: '12px 8px' }}>{formatCurrency(transaction.amount)}</td>
+                  <td style={{ padding: '12px 8px', fontWeight: 'bold' }}>{formatCurrency(transaction.amount)}</td>
                   <td style={{ padding: '12px 8px' }}>
-                    <span style={{ color: statusColor }}>
+                    <span style={{ 
+                      color: statusColor,
+                      backgroundColor: statusBgColor,
+                      padding: '4px 8px',
+                      borderRadius: '4px',
+                      fontSize: '0.875rem',
+                      fontWeight: 'bold'
+                    }}>
                       {transaction.payment_status.charAt(0).toUpperCase() + transaction.payment_status.slice(1)}
                     </span>
                   </td>
@@ -353,14 +457,15 @@ const PaymentReport: React.FC = () => {
 
   // Print footer component - only visible when printing
   const PrintFooter = () => (
-    <div className="print-footer print-only" style={{ display: 'none' }}>
-          ພິມວັນທີ: {new Date().toLocaleDateString()} {new Date().toLocaleTimeString()}
+    <div className="print-footer print-only">
+      <p>ພິມວັນທີ: {new Date().toLocaleDateString('lo-LA')} {new Date().toLocaleTimeString('lo-LA')}</p>
+      <p>ລາຍງານສ້າງໂດຍລະບົບການຈັດການບໍລິການ HomeCare</p>
     </div>
   );
 
   return (
     <Box className="payment-report-container" id="payment-report-print">
-      <Typography variant="h6" mb={3} fontWeight="bold" color="#611463" className="report-title no-print">
+      <Typography variant="h5" mb={3} fontWeight="bold" color="#611463" className="report-title no-print">
         ລາຍງານການຊຳລະເງິນ
       </Typography>
       
@@ -368,19 +473,58 @@ const PaymentReport: React.FC = () => {
       <ActionButtons />
       <FilterPanel />
       
-      {loading ? (
+     {loading ? (
         <Box sx={{ display: 'flex', justifyContent: 'center', my: 8 }}>
-          <CircularProgress sx={{ color: '#611463' }} />
+          <CircularProgress sx={{ color: '#611463' }} size={60} />
+          <Box sx={{ ml: 2, display: 'flex', alignItems: 'center' }}>
+            <Typography color="#611463">ກຳລັງໂຫລດຂໍ້ມູນ...</Typography>
+          </Box>
         </Box>
       ) : error ? (
-        <Box sx={{ textAlign: 'center', my: 4, color: 'error.main' }}>
-          <Typography>{error}</Typography>
+        <Box sx={{ 
+          textAlign: 'center', 
+          my: 4, 
+          p: 3, 
+          border: '1px solid #f44336',
+          borderRadius: 2,
+          bgcolor: '#ffebee'
+        }}>
+          <Typography color="error.main" variant="h6" mb={1}>ເກີດຂໍ້ຜິດພາດ</Typography>
+          <Typography color="error.main" mb={2}>{error}</Typography>
+          <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', flexWrap: 'wrap' }}>
+            <Button 
+              variant="outlined" 
+              onClick={applyFilters}
+              sx={{ color: '#611463', borderColor: '#611463' }}
+            >
+              ລອງໃໝ່
+            </Button>
+            <Button 
+              variant="outlined" 
+              onClick={useMockData}
+              sx={{ color: '#f7981e', borderColor: '#f7981e' }}
+            >
+              ທົດສອບດ້ວຍຂໍ້ມູນຕົວຢ່າງ
+            </Button>
+            <Button 
+              variant="outlined" 
+              onClick={() => {
+                console.log('Debug Info:', debugInfo);
+                console.log('Current filters:', filterParams);
+                alert('ກະລຸນາເປີດ Developer Console (F12) ເພື່ອເບິ່ງລາຍລະອຽດຂໍ້ຜິດພາດ');
+              }}
+              sx={{ color: '#666', borderColor: '#666' }}
+              size="small"
+            >
+              ເບິ່ງລາຍລະອຽດ
+            </Button>
+          </Box>
         </Box>
       ) : (
         <Grid container spacing={3}>
           <Grid item xs={12}>
             <Paper sx={{ p: 3, borderRadius: 2 }}>
-              <Typography variant="subtitle1" mb={2} fontWeight="bold">
+              <Typography variant="h6" mb={3} fontWeight="bold" color="#611463">
                 ພາບລວມລາຍໄດ້ແບບລາຍເດືອນ
               </Typography>
               <PaymentCharts />
@@ -390,11 +534,11 @@ const PaymentReport: React.FC = () => {
           <Grid item xs={12} md={6}>
             <Card sx={{ borderRadius: 2, bgcolor: '#611463', color: 'white', height: '100%' }}>
               <CardContent>
-                <Typography variant="body2" sx={{ opacity: 0.8 }}>ລາຍຮັບທັງໝົດ</Typography>
-                <Typography variant="h4" fontWeight="bold">
+                <Typography variant="body2" sx={{ opacity: 0.8, mb: 1 }}>ລາຍຮັບທັງໝົດ</Typography>
+                <Typography variant="h3" fontWeight="bold" mb={2}>
                   {formatCurrency(summaryData.totalRevenue)}
                 </Typography>
-                <Box sx={{ mt: 2, display: 'flex', alignItems: 'center' }}>
+                <Box sx={{ display: 'flex', alignItems: 'center' }}>
                   <Box sx={{ 
                     bgcolor: 'rgba(255,255,255,0.2)', 
                     borderRadius: 1, 
@@ -422,11 +566,11 @@ const PaymentReport: React.FC = () => {
           <Grid item xs={12} md={6}>
             <Card sx={{ borderRadius: 2, bgcolor: '#f7981e', color: 'white', height: '100%' }}>
               <CardContent>
-                <Typography variant="body2" sx={{ opacity: 0.8 }}>ທຸລະກຳທັງໝົດ</Typography>
-                <Typography variant="h4" fontWeight="bold">
-                  {summaryData.totalTransactions.toLocaleString()}
+                <Typography variant="body2" sx={{ opacity: 0.8, mb: 1 }}>ທຸລະກຳທັງໝົດ</Typography>
+                <Typography variant="h3" fontWeight="bold" mb={2}>
+                  {summaryData.totalTransactions.toLocaleString('lo-LA')}
                 </Typography>
-                <Box sx={{ mt: 2, display: 'flex', alignItems: 'center' }}>
+                <Box sx={{ display: 'flex', alignItems: 'center' }}>
                   <Box sx={{ 
                     bgcolor: 'rgba(255,255,255,0.2)', 
                     borderRadius: 1, 
@@ -453,7 +597,7 @@ const PaymentReport: React.FC = () => {
           
           <Grid item xs={12}>
             <Paper sx={{ p: 3, borderRadius: 2 }}>
-              <Typography variant="subtitle1" mb={2} fontWeight="bold">
+              <Typography variant="h6" mb={3} fontWeight="bold" color="#611463">
                 ການເຮັດທຸລະກຳລ່າສຸດ
               </Typography>
               <RecentTransactions />

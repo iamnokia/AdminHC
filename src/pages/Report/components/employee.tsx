@@ -80,6 +80,7 @@ const ServiceProviderReport = () => {
     resetFilters,
     loading,
     error,
+    debugInfo,
     providerData,
     categoryDistribution,
     statusDistribution,
@@ -90,7 +91,9 @@ const ServiceProviderReport = () => {
     expandedRows,
     toggleRowExpansion,
     handleExport,
-    handlePrint
+    handlePrint,
+    useMockData,
+    testAPI
   } = useServiceProviderReportController();
   
   // Reusable filter panel component
@@ -297,47 +300,88 @@ const ServiceProviderReport = () => {
 
   // Print header component
   const PrintHeader = () => (
-    <div className="print-header print-only" style={{ display: 'none' }}>
+    <div className="print-header print-only">
       <h1>ລາຍງານຜູ້ໃຫ້ບໍລິການ</h1>
       {filterParams.startDate && filterParams.endDate && (
-        <p>ໄລຍະເວລາ: {filterParams.startDate} - {filterParams.endDate}</p>
+        <p>ໄລຍະເວລາ: {filterParams.startDate} ເຖິງ {filterParams.endDate}</p>
       )}
+      <p>ສ້າງເມື່ອ: {new Date().toLocaleDateString('lo-LA')} {new Date().toLocaleTimeString('lo-LA')}</p>
     </div>
   );
 
   // Print footer component
   const PrintFooter = () => (
-    <div className="print-footer print-only" style={{ display: 'none' }}>
-      ພິມວັນທີ: {new Date().toLocaleDateString()} {new Date().toLocaleTimeString()}
+    <div className="print-footer print-only">
+      <p>ພິມວັນທີ: {new Date().toLocaleDateString('lo-LA')} {new Date().toLocaleTimeString('lo-LA')}</p>
+      <p>ລາຍງານສ້າງໂດຍລະບົບການຈັດການບໍລິການ HomeCare</p>
     </div>
   );
   
   if (loading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', my: 8 }}>
-        <CircularProgress sx={{ color: '#611463' }} />
+        <CircularProgress sx={{ color: '#611463' }} size={60} />
+        <Box sx={{ ml: 2, display: 'flex', alignItems: 'center' }}>
+          <Typography color="#611463">ກຳລັງໂຫຼດຂໍ້ມູນ...</Typography>
+        </Box>
       </Box>
     );
   }
 
   if (error) {
     return (
-      <Box sx={{ textAlign: 'center', my: 4, color: 'error.main' }}>
-        <Typography>{error}</Typography>
+      <Box sx={{ 
+        textAlign: 'center', 
+        my: 4, 
+        p: 3, 
+        border: '1px solid #f44336',
+        borderRadius: 2,
+        bgcolor: '#ffebee'
+      }}>
+        <Typography color="error.main" variant="h6" mb={1}>ເກີດຂໍ້ຜິດພາດ</Typography>
+        <Typography color="error.main" mb={2}>{error}</Typography>
+        <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', flexWrap: 'wrap' }}>
+          <Button 
+            variant="outlined" 
+            onClick={applyFilters}
+            sx={{ color: '#611463', borderColor: '#611463' }}
+          >
+            ລອງໃໝ່
+          </Button>
+          <Button 
+            variant="outlined" 
+            onClick={useMockData}
+            sx={{ color: '#f7981e', borderColor: '#f7981e' }}
+          >
+            ທົດສອບດ້ວຍຂໍ້ມູນຕົວຢ່າງ
+          </Button>
+          <Button 
+            variant="outlined" 
+            onClick={() => {
+              console.log('Debug Info:', debugInfo);
+              console.log('Current filters:', filterParams);
+              alert('ກະລຸນາເປີດ Developer Console (F12) ເພື່ອເບິ່ງລາຍລະອຽດຂໍ້ຜິດພາດ');
+            }}
+            sx={{ color: '#666', borderColor: '#666' }}
+            size="small"
+          >
+            ເບິ່ງລາຍລະອຽດ
+          </Button>
+        </Box>
       </Box>
     );
   }
   
   return (
     <Box id="service-provider-report-print">
-      <Typography variant="h6" mb={3} fontWeight="bold" color="#611463" className="no-print">
+      <Typography variant="h5" mb={3} fontWeight="bold" color="#611463" className="no-print">
         ລາຍງານຜູ້ໃຫ້ບໍລິການ
       </Typography>
       
       <PrintHeader />
       <ActionButtons />
       <FilterPanel />
-      
+        
       <Tabs 
         value={tabValue} 
         onChange={handleTabChange}
@@ -352,21 +396,48 @@ const ServiceProviderReport = () => {
         }}
         className="no-print"
       >
-        <Tab label="ຜູ້ໃຊ້ບໍລິການທັງໝົດ" />
+        <Tab label="ຜູ້ໃຫ້ບໍລິການທັງໝົດ" />
         <Tab label=":" />
-        <Tab label="ສະຖິຕິຂອງຜູ້ໃຊ້ບໍລິການ" />
+        <Tab label="ສະຖິຕິຂອງຜູ້ໃຫ້ບໍລິການ" />
       </Tabs>
       
       {/* Tab 1: All Providers */}
       {tabValue === 0 && (
         <Paper sx={{ p: 3, borderRadius: 2, mb: 3 }}>
-          <Typography variant="subtitle1" mb={3} fontWeight="bold">
+          <Typography variant="h6" mb={3} fontWeight="bold" color="#611463">
             ລາຍຊື່ຜູ້ໃຫ້ບໍລິການ
           </Typography>
           {providerData.length === 0 ? (
-            <Typography align="center" color="text.secondary" py={4}>
-              ບໍ່ມີຂໍ້ມູນສຳລັບການເລືອກປະຈຸບັນ
-            </Typography>
+            <Box sx={{ 
+              textAlign: 'center', 
+              py: 4,
+              color: 'text.secondary',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 2,
+              alignItems: 'center'
+            }}>
+              <Typography variant="h6">ບໍ່ມີຂໍ້ມູນສຳລັບການເລືອກປະຈຸບັນ</Typography>
+              <Typography variant="body2">ກະລຸນາປັບແຕ່ງຕົວເລືອກການຟິວເຕີແລະລອງໃໝ່</Typography>
+              <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', justifyContent: 'center' }}>
+                <Button 
+                  variant="outlined" 
+                  onClick={applyFilters}
+                  sx={{ color: '#611463', borderColor: '#611463' }}
+                  size="small"
+                >
+                  ລອງໃໝ່
+                </Button>
+                <Button 
+                  variant="outlined" 
+                  onClick={useMockData}
+                  sx={{ color: '#f7981e', borderColor: '#f7981e' }}
+                  size="small"
+                >
+                  ທົດສອບດ້ວຍຂໍ້ມູນຕົວຢ່າງ
+                </Button>
+              </Box>
+            </Box>
           ) : (
             <TableContainer>
               <Table>
@@ -414,7 +485,7 @@ const ServiceProviderReport = () => {
                           </TableCell>
                           <TableCell>
                             <Chip 
-                              label={categoryMap[provider.cat_id] || provider.cat_name || 'Unknown'} 
+                              label={categoryMap[provider.cat_id] || provider.cat_name || 'ບໍ່ທາງລຳດັບ'} 
                               size="small"
                               sx={{ 
                                 bgcolor: provider.cat_id === 5 ? '#f7981e' : '#611463',
@@ -426,7 +497,7 @@ const ServiceProviderReport = () => {
                             <Typography variant="body2">{provider.email}</Typography>
                             <Typography variant="caption">{provider.tel}</Typography>
                           </TableCell>
-                          <TableCell>${provider.price || provider.amount || 0}</TableCell>
+                          <TableCell>{provider.price || provider.amount || 0} ກີບ</TableCell>
                           <TableCell>{provider.address || '-'}</TableCell>
                           <TableCell>{provider.village || '-'}</TableCell>
                           <TableCell>{provider.city || provider.district || '-'}</TableCell>
@@ -458,35 +529,37 @@ const ServiceProviderReport = () => {
                             <Collapse in={expandedRows[provider.id]} timeout="auto" unmountOnExit>
                               <Box sx={{ py: 2, px: 4, bgcolor: '#f9f9f9' }}>
                                 <Grid container spacing={2}>
+                                  <Grid item xs={12} md={6}>
+                                    <Typography variant="subtitle2" fontWeight="bold" gutterBottom>
+                                      ຂໍ້ມູນລະອຽດ
+                                    </Typography>
+                                    <Typography variant="body2" mb={1}>
+                                      <strong>ອີເມວ:</strong> {provider.email || '-'}
+                                    </Typography>
+                                    <Typography variant="body2" mb={1}>
+                                      <strong>ເບີໂທ:</strong> {provider.tel || '-'}
+                                    </Typography>
+                                    <Typography variant="body2" mb={1}>
+                                      <strong>ທີ່ຢູ່:</strong> {provider.address || '-'}
+                                    </Typography>
+                                    <Typography variant="body2" mb={1}>
+                                      <strong>ເພດ:</strong> {provider.gender === 'male' ? 'ຊາຍ' : 'ຍິງ'}
+                                    </Typography>
+                                  </Grid>
                                   {provider.cat_id === 5 && (provider.car || provider.car_brand) && (
                                     <Grid item xs={12} md={6}>
                                       <Typography variant="subtitle2" fontWeight="bold" gutterBottom>
                                         ຂໍ້ມູນລົດ
                                       </Typography>
-                                      <Box sx={{ mb: 1 }}>
-                                        <Typography variant="body2">
-                                          <strong>ຍີ່ຫໍ້:</strong> {provider.car?.car_brand || provider.car_brand || '-'}
-                                        </Typography>
-                                        <Typography variant="body2">
-                                          <strong>ຮຸ່ນ:</strong> {provider.car?.model || provider.model || '-'}
-                                        </Typography>
-                                        <Typography variant="body2">
-                                          <strong>ປ້າຍທະບຽນ:</strong> {provider.car?.license_plate || provider.license_plate || '-'}
-                                        </Typography>
-                                        <Typography variant="body2">
-                                          <strong>ສະຖານະ:</strong>{' '}
-                                          <Box component="span" sx={{ 
-                                            px: 1, 
-                                            py: 0.2, 
-                                            borderRadius: 1,
-                                            bgcolor: getStatusColor(provider.status || provider.service_status).bg,
-                                            color: getStatusColor(provider.status || provider.service_status).text,
-                                            fontSize: '0.8rem'
-                                          }}>
-                                            {provider.status || provider.service_status || 'INACTIVE'}
-                                          </Box>
-                                        </Typography>
-                                      </Box>
+                                      <Typography variant="body2" mb={1}>
+                                        <strong>ຍີ່ຫໍ້:</strong> {provider.car?.car_brand || provider.car_brand || '-'}
+                                      </Typography>
+                                      <Typography variant="body2" mb={1}>
+                                        <strong>ຮຸ່ນ:</strong> {provider.car?.model || provider.model || '-'}
+                                      </Typography>
+                                      <Typography variant="body2" mb={1}>
+                                        <strong>ປ້າຍທະບຽນ:</strong> {provider.car?.license_plate || provider.license_plate || '-'}
+                                      </Typography>
                                     </Grid>
                                   )}
                                 </Grid>
@@ -505,7 +578,7 @@ const ServiceProviderReport = () => {
           {providerData.length > 0 && (
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 3 }}>
               <Typography variant="body2" color="text.secondary">
-                ສະແດງ {providerData.length} ຈາກ {providerData.length} ລາຍການ
+                ສະແດງ {providerData.length} ລາຍການ
               </Typography>
               <Box sx={{ display: 'flex', gap: 1 }}>
                 <Button 
@@ -563,85 +636,14 @@ const ServiceProviderReport = () => {
           )}
         </Paper>
       )}
-      
-      {/* Tab 2: Moving Providers with Car Information
-      {tabValue === 1 && (
-        <Paper sx={{ p: 3, borderRadius: 2, mb: 3 }}>
-          <Typography variant="subtitle1" mb={3} fontWeight="bold">
-            ລາຍຊື່ຜູ້ໃຫ້ບໍລິການດ້ວຍລົດ
-          </Typography>
-          
-          {carProviders.length === 0 ? (
-            <Typography align="center" color="text.secondary" py={4}>
-              ບໍ່ມີຂໍ້ມູນຜູ້ໃຫ້ບໍລິການແກ່ເຄື່ອງ
-            </Typography>
-          ) : (
-            <TableContainer>
-              <Table>
-                <TableHead sx={{ bgcolor: '#fafafa' }}>
-                  <TableRow>
-                    <TableCell sx={{ fontWeight: 'bold' }}>ລາຍຊື່ຜູ້ໃຫ້ບໍລິການ</TableCell>
-                    <TableCell sx={{ fontWeight: 'bold' }}>ຕິດຕໍ່</TableCell>
-                    <TableCell sx={{ fontWeight: 'bold' }}>ລາຄາ</TableCell>
-                    <TableCell sx={{ fontWeight: 'bold' }}>ລູ້ນລົດ</TableCell>
-                    <TableCell sx={{ fontWeight: 'bold' }}>ຍີຫໍ້ລົດ</TableCell>
-                    <TableCell sx={{ fontWeight: 'bold' }}>ປ້າຍທະບຽນ</TableCell>
-                    <TableCell sx={{ fontWeight: 'bold' }}>ສະຖານະ</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {carProviders.map((provider) => {
-                    const carStatusColor = getStatusColor(provider.car?.status || provider.service_status);
-                    return (
-                      <TableRow key={provider.id}>
-                        <TableCell>
-                          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                            <Avatar sx={{ mr: 1, bgcolor: '#f7981e' }}>
-                              {provider.first_name?.charAt(0) || 'U'}
-                            </Avatar>
-                            <Typography variant="body2">
-                              {provider.first_name} {provider.last_name}
-                            </Typography>
-                          </Box>
-                        </TableCell>
-                        <TableCell>
-                          <Typography variant="body2">{provider.email}</Typography>
-                          <Typography variant="caption">{provider.tel}</Typography>
-                        </TableCell>
-                        <TableCell>${provider.price || provider.amount || 0}/hr</TableCell>
-                        <TableCell>{provider.car_brand || provider.car?.car_brand || '-'}</TableCell>
-                        <TableCell>{provider.model || provider.car?.model || '-'}</TableCell>
-                        <TableCell>{provider.license_plate || provider.car?.license_plate || '-'}</TableCell>
-                        <TableCell>
-                          <Box sx={{ 
-                            display: 'inline-block',
-                            px: 1,
-                            py: 0.5,
-                            borderRadius: 1,
-                            bgcolor: carStatusColor.bg,
-                            color: carStatusColor.text,
-                            fontSize: '0.875rem'
-                          }}>
-                            {provider.status || provider.service_status || 'INACTIVE'}
-                          </Box>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          )}
-        </Paper>
-      )} */}
-      
+     
       {/* Tab 3: Provider Statistics */}
       {tabValue === 2 && (
         <Grid container spacing={3}>
           <Grid item xs={12} md={6}>
             <Paper sx={{ p: 3, borderRadius: 2 }}>
-              <Typography variant="subtitle1" mb={2} fontWeight="bold">
-                ຜູ້ໃຊ້ບໍລິການຕາມໝວດໝູ່
+              <Typography variant="h6" mb={2} fontWeight="bold" color="#611463">
+                ຜູ້ໃຫ້ບໍລິການຕາມໝວດໝູ່
               </Typography>
               <ResponsiveContainer width="100%" height={300}>
                 <PieChart>
@@ -668,8 +670,8 @@ const ServiceProviderReport = () => {
           
           <Grid item xs={12} md={6}>
             <Paper sx={{ p: 3, borderRadius: 2 }}>
-              <Typography variant="subtitle1" mb={2} fontWeight="bold">
-                ສະຖານະຂອງຜູ້ໃຫ້ບໍລິການແບບສະເລ່ຍ
+              <Typography variant="h6" mb={2} fontWeight="bold" color="#611463">
+                ສະຖານະຂອງຜູ້ໃຫ້ບໍລິການ
               </Typography>
               <ResponsiveContainer width="100%" height={300}>
                 <PieChart>
@@ -695,16 +697,16 @@ const ServiceProviderReport = () => {
           
           <Grid item xs={12}>
             <Paper sx={{ p: 3, borderRadius: 2 }}>
-              <Typography variant="subtitle1" mb={2} fontWeight="bold">
-                ອັດຕາທີ່ເພີ່ມຂຶ້ນຂອງລາຄາແຕ່ລະໄລຍະ
+              <Typography variant="h6" mb={2} fontWeight="bold" color="#611463">
+                ການແຈກແຈງລາຄາຂອງຜູ້ໃຫ້ບໍລິການ
               </Typography>
               <ResponsiveContainer width="100%" height={300}>
                 <BarChart data={priceRangeData}>
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="range" label={{ value: 'Price Range ($)', position: 'insideBottom', offset: -5 }} />
-                  <YAxis label={{ value: 'Number of Providers', angle: -90, position: 'insideLeft' }} />
+                  <XAxis dataKey="range" label={{ value: 'ຊ່ວງລາຄາ (ກີບ)', position: 'insideBottom', offset: -5 }} />
+                  <YAxis label={{ value: 'ຈຳນວນຜູ້ໃຫ້ບໍລິການ', angle: -90, position: 'insideLeft' }} />
                   <Tooltip />
-                  <Bar dataKey="count" fill="#611463" name="Providers" />
+                  <Bar dataKey="count" fill="#611463" name="ຜູ້ໃຫ້ບໍລິການ" />
                 </BarChart>
               </ResponsiveContainer>
             </Paper>

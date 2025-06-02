@@ -555,9 +555,8 @@ const ServiceProviderForm = () => {
                                             />
                                         </Box>
                                     )}
-
                                     <FormHelperText>
-                                        ສາມາດຂ້າມໄດ້ຖ້າບໍ່ຕ້ອງການອັບໂຫຼດຮູບພາບໃນຕອນນີ້
+                                        ຮອງຮັບສະເພາະໄຟລ໌ຮູບປະເພດ PNG, JPG, JPEG ເທົ່ານັ້ນ
                                     </FormHelperText>
                                 </Grid>
                             </Grid>

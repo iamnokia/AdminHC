@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useDispatch } from "react-redux";
 import { loginSuccess } from "../../../store/slices/userSlice";
 import { useNavigate } from "react-router-dom";
-import { HOME_PATH } from "../../../routes/path";
+import { HOME_PATH, SHOW_SERVICE_PATH } from "../../../routes/path";
 
 const useLoginController = () => {
   const dispatch = useDispatch();
@@ -70,7 +70,7 @@ const useLoginController = () => {
         }));
       }
       
-      navigate(HOME_PATH);
+      navigate(SHOW_SERVICE_PATH);
     } catch (err: any) {
       setError(err?.response?.data?.message ?? "Server error, please try again later");
     } finally {

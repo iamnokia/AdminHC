@@ -25,7 +25,7 @@ import PaymentReport from './components/payment';
 import FeedbackReport from './components/feedback';
 
 const ReportsIndex = () => {
-  const [activeTab, setActiveTab] = useState('car'); // Set car as default active tab
+  const [activeTab, setActiveTab] = useState('usage'); // Set car as default active tab
   
   const handleTabChange = (tab) => {
     setActiveTab(tab);
@@ -68,7 +68,7 @@ const ReportsIndex = () => {
           py: 0.5,
           borderRadius: 1,
         }}>
-          ອັບເດດລ່າສຸດ: ມື້ນີ້, 10:45 AM
+          ອັບເດດລ່າສຸດແລ້ວ
         </Typography>
       </Box>
 

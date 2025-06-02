@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import axios from "axios";
 import Swal from "sweetalert2";
 
@@ -15,7 +15,22 @@ interface ErrorState {
   [key: string]: string | undefined;
 }
 
-export const useSimpleCarController = (employeeId: number) => {
+interface Employee {
+  id: number;
+  first_name: string;
+  last_name: string;
+  cat_id: number;
+  cat_name: string;
+}
+
+interface ValidationResult {
+  isValid: boolean;
+  canRegisterCar: boolean;
+  employee: Employee | null;
+  errorMessage: string | null;
+}
+
+export const useEnhancedCarController = (employeeId: number) => {
   const [formData, setFormData] = useState<CarData>({
     emp_id: employeeId,
     car_brand: "",
@@ -27,6 +42,97 @@ export const useSimpleCarController = (employeeId: number) => {
 
   const [errors, setErrors] = useState<ErrorState>({});
   const [loading, setLoading] = useState<boolean>(false);
+  const [validationLoading, setValidationLoading] = useState<boolean>(true);
+  const [validation, setValidation] = useState<ValidationResult>({
+    isValid: false,
+    canRegisterCar: false,
+    employee: null,
+    errorMessage: null
+  });
+
+  // Validate employee eligibility on mount and when employeeId changes
+  useEffect(() => {
+    if (employeeId > 0) {
+      validateEmployeeEligibility();
+    }
+  }, [employeeId]);
+
+  const validateEmployeeEligibility = async () => {
+    try {
+      setValidationLoading(true);
+      
+      console.log("Validating employee eligibility for ID:", employeeId);
+      
+      // Fetch employee details and existing car data
+      const [employeeResponse, carResponse] = await Promise.all([
+        axios.get("https://homecare-pro.onrender.com/employees/read_employees", {
+          headers: { "Content-Type": "application/json" }
+        }),
+        axios.get("https://homecare-pro.onrender.com/emp_car/read_emp_car", {
+          headers: { "Content-Type": "application/json" }
+        })
+      ]);
+
+      console.log("Employee response:", employeeResponse.data);
+      console.log("Car response:", carResponse.data);
+
+      const employee = employeeResponse.data.find((emp: Employee) => emp.id === employeeId);
+      
+      if (!employee) {
+        setValidation({
+          isValid: false,
+          canRegisterCar: false,
+          employee: null,
+          errorMessage: "ບໍ່ພົບຂໍ້ມູນພະນັກງານ"
+        });
+        return;
+      }
+
+      // Check if employee is in Moving category (cat_id = 5)
+      if (employee.cat_id !== 5) {
+        setValidation({
+          isValid: false,
+          canRegisterCar: false,
+          employee,
+          errorMessage: "ພະນັກງານນີ້ບໍ່ແມ່ນໃນໝວດຂົນສົ່ງ - ບໍ່ສາມາດລົງທະບຽນລົດໄດ້"
+        });
+        return;
+      }
+
+      // Check if employee already has car data
+      const existingCar = carResponse.data.find((car: any) => car.emp_id === employeeId);
+      if (existingCar) {
+        setValidation({
+          isValid: false,
+          canRegisterCar: false,
+          employee,
+          errorMessage: "ພະນັກງານນີ້ມີຂໍ້ມູນລົດແລ້ວ - ບໍ່ສາມາດເພີ່ມລົດອີກໄດ້"
+        });
+        return;
+      }
+
+      // Employee is eligible
+      setValidation({
+        isValid: true,
+        canRegisterCar: true,
+        employee,
+        errorMessage: null
+      });
+
+      console.log("Employee validation successful:", employee);
+      
+    } catch (error) {
+      console.error("Error validating employee:", error);
+      setValidation({
+        isValid: false,
+        canRegisterCar: false,
+        employee: null,
+        errorMessage: "ບໍ່ສາມາດກວດສອບຂໍ້ມູນພະນັກງານໄດ້"
+      });
+    } finally {
+      setValidationLoading(false);
+    }
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -45,13 +151,20 @@ export const useSimpleCarController = (employeeId: number) => {
   const validateForm = () => {
     const newErrors: ErrorState = {};
     
+    // First check if employee is eligible
+    if (!validation.canRegisterCar) {
+      newErrors.general = validation.errorMessage || "ບໍ່ສາມາດລົງທະບຽນລົດໄດ້";
+      setErrors(newErrors);
+      return false;
+    }
+    
     // Validate car details
     if (!formData.car_brand.trim()) newErrors.car_brand = "ກະລຸນາປ້ອນຍີ່ຫໍ້ລົດ";
     if (!formData.model.trim()) newErrors.model = "ກະລຸນາປ້ອນຮຸ່ນລົດ";
     if (!formData.license_plate.trim()) newErrors.license_plate = "ກະລຸນາປ້ອນປ້າຍທະບຽນ";
     
-    // Only require car image if it's available in the form
-    if (formData.car_image === null) newErrors.car_image = "ກະລຸນາເລືອກຮູບລົດ";
+    // Car image is optional but can be validated if needed
+    // if (!formData.car_image) newErrors.car_image = "ກະລຸນາເລືອກຮູບລົດ";
 
     // Make sure we have a valid employee ID
     if (!formData.emp_id || formData.emp_id <= 0) {
@@ -62,16 +175,29 @@ export const useSimpleCarController = (employeeId: number) => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent, onSuccess?: () => void) => {
     e.preventDefault();
     
     console.log("Form submission started", {
       employeeId,
-      formData
+      formData,
+      validation
     });
     
     if (!validateForm()) {
       console.log("Form validation failed", errors);
+      
+      // Show validation error alert
+      const errorMessages = Object.values(errors).filter(Boolean);
+      if (errorMessages.length > 0) {
+        Swal.fire({
+          title: "ກະລຸນາກວດສອບຂໍ້ມູນ",
+          text: errorMessages[0],
+          icon: "warning",
+          confirmButtonText: "ຕົກລົງ",
+          confirmButtonColor: "#611463"
+        });
+      }
       return;
     }
 
@@ -88,7 +214,7 @@ export const useSimpleCarController = (employeeId: number) => {
         }
       });
       
-      // Create JSON data
+      // Create JSON data for initial attempt
       const jsonData = {
         emp_id: formData.emp_id,
         car_brand: formData.car_brand,
@@ -133,7 +259,9 @@ export const useSimpleCarController = (employeeId: number) => {
             car_image: null
           });
           
-          return; // Exit early if successful
+          // Call success callback if provided
+          onSuccess?.();
+          return;
         } catch (jsonError) {
           console.log("JSON submission failed, falling back to FormData", jsonError);
           // Fall through to FormData approach
@@ -186,6 +314,9 @@ export const useSimpleCarController = (employeeId: number) => {
         car_image: null
       });
       
+      // Call success callback if provided
+      onSuccess?.();
+      
     } catch (error) {
       console.error("Error creating car:", error);
       
@@ -221,12 +352,28 @@ export const useSimpleCarController = (employeeId: number) => {
     }
   };
 
+  const resetForm = () => {
+    setFormData({
+      emp_id: employeeId,
+      car_brand: "",
+      model: "",
+      license_plate: "",
+      status: "ACTIVE",
+      car_image: null
+    });
+    setErrors({});
+  };
+
   return {
     formData,
     errors,
     loading,
+    validationLoading,
+    validation,
     handleChange,
     handleFileChange,
-    handleSubmit
+    handleSubmit,
+    resetForm,
+    validateEmployeeEligibility
   };
 };

@@ -263,11 +263,11 @@ const ServiceHistoryReport: React.FC = () => {
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ borderBottom: '2px solid #611463', backgroundColor: '#f5f5f5' }}>
-                <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 'bold', color: '#611463' }}>ວັນທີ</th>
-                <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 'bold', color: '#611463' }}>ປະເພດການບໍລິການ</th>
-                <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 'bold', color: '#611463' }}>ລາຍຊື່ຜູ້ໃຫ້ບໍລິການ</th>
-                <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 'bold', color: '#611463' }}>ສະຖານະ</th>
-                <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 'bold', color: '#611463' }}>ຈຳນວນເງິນ</th>
+                <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 'bold', color: '#ffff' }}>ວັນທີ</th>
+                <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 'bold', color: '#ffff' }}>ປະເພດການບໍລິການ</th>
+                <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 'bold', color: '#ffff' }}>ລາຍຊື່ຜູ້ໃຫ້ບໍລິການ</th>
+                <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 'bold', color: '#ffff' }}>ສະຖານະ</th>
+                <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 'bold', color: '#ffff' }}>ຈຳນວນເງິນ</th>
               </tr>
             </thead>
             <tbody>

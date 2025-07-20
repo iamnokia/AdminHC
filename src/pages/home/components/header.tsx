@@ -150,7 +150,9 @@ const ServiceProviderForm = () => {
         errors,
         isSubmitting,
         submitSuccess,
-        setFormData
+        setFormData,
+            addressByDistrict
+
     } = useMainControllers();
 
     // State to store the preview URL
@@ -387,20 +389,6 @@ const ServiceProviderForm = () => {
                                     )}
                                 </FormControl>
                             </Grid>
-                            <Grid item xs={12}>
-                                <TextField
-                                    required
-                                    fullWidth
-                                    label="ທີ່ຢູ່"
-                                    name="address"
-                                    value={formData.address}
-                                    onChange={handleChange}
-                                    variant="outlined"
-                                    placeholder="ຫາຍໂສກ"
-                                    error={!!errors.address}
-                                    helperText={errors.address}
-                                />
-                            </Grid>
                         </Grid>
                     </StyledPaper>
 
@@ -479,6 +467,33 @@ const ServiceProviderForm = () => {
                                     error={!!errors.price}
                                 />
                             </Grid>
+                                <Grid item xs={12} sm={6}>
+    <FormControl fullWidth required error={!!errors.address}>
+        <InputLabel>ທີ່ຢູ່</InputLabel>
+        <Select
+            name="address"
+            value={formData.address}
+            onChange={handleChange}
+            label="ທີ່ຢູ່"
+            disabled={!formData.city}
+        >
+            {formData.city && addressByDistrict[formData.city] && 
+                addressByDistrict[formData.city].map((address, index) => (
+                    <MenuItem key={index} value={address.en}>
+                        {address.lo} ({address.en})
+                    </MenuItem>
+                ))
+            }
+        </Select>
+        {errors.address && (
+            <FormHelperText>{errors.address}</FormHelperText>
+        )}
+        {!formData.city && (
+            <FormHelperText>ກະລຸນາເລືອກເມືອງກ່ອນ</FormHelperText>
+        )}
+    </FormControl>
+</Grid>
+
                         </Grid>
                     </StyledPaper>
 
